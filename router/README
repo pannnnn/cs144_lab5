@@ -1,0 +1,12 @@
+README 
+
+Yizhao Wang, wangyiz3
+Yuhui Pan, panyuhui
+Wen Hao Zhang, zhqn1782
+
+Following the pseudo code for sending a arp request when the difference in 
+time is greater than 1, resulted the tests for host unreachable to fail. 
+A solution we came up was changing the difference time to be greater or equal 
+to one. If in some point if the tests fail for host unreachable, please 
+consider to change the time difference a value in the in range that is less 
+than one.
