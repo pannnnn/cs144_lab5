@@ -52,6 +52,8 @@ void sr_init(struct sr_instance* sr, int nat_enable)
     /* Add initialization code here! */
     if(nat_enable){
       sr_nat_init(sr->nat);
+    }else{
+      sr->nat = NULL;
     }
 } /* -- sr_init -- */
 
