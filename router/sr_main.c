@@ -57,6 +57,7 @@ static void sr_load_rt_wrap(struct sr_instance* sr, char* rtable);
 int main(int argc, char **argv)
 {
     int c;
+    int nat_enable = 0;
     char *host   = DEFAULT_HOST;
     char *user = 0;
     char *server = DEFAULT_SERVER;
@@ -101,6 +102,8 @@ int main(int argc, char **argv)
             case 'T':
                 template = optarg;
                 break;
+            case 'n':
+                nat_enable = 1;
         } /* switch */
     } /* -- while -- */
 
@@ -157,7 +160,7 @@ int main(int argc, char **argv)
     }
 
     /* call router init (for arp subsystem etc.) */
-    sr_init(&sr);
+    sr_init(&sr, nat_enable);
 
     /* -- whizbang main loop ;-) */
     while( sr_read_from_server(&sr) == 1);
