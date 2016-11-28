@@ -22,6 +22,8 @@
 #include "sr_protocol.h"
 #include "sr_arpcache.h"
 #include "sr_utils.h"
+#include "sr_nat.h"
+#include "sr_nat.c"
 
 /*---------------------------------------------------------------------
  * Method: sr_init(void)
@@ -49,9 +51,7 @@ void sr_init(struct sr_instance* sr, int nat_enable)
     
     /* Add initialization code here! */
     if(nat_enable){
-      sr_nat_init(&(sr->nat));
-    }else{
-      sr->nat = NULL;
+      sr_nat_init(sr->nat);
     }
 } /* -- sr_init -- */
 

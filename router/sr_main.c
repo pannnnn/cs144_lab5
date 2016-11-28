@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 
     printf("Using %s\n", VERSION_INFO);
 
-    while ((c = getopt(argc, argv, "hs:v:p:u:t:r:l:T:")) != EOF)
+    while ((c = getopt(argc, argv, "hs:v:p:u:t:r:l:T:n:")) != EOF)
     {
         switch (c)
         {
@@ -252,6 +252,7 @@ static void sr_init_instance(struct sr_instance* sr)
     sr->if_list = 0;
     sr->routing_table = 0;
     sr->logfile = 0;
+    sr->nat = NULL;
 } /* -- sr_init_instance -- */
 
 /*-----------------------------------------------------------------------------

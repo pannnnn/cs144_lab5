@@ -16,6 +16,7 @@
 #include "sr_protocol.h"
 #include "sr_arpcache.h"
 #include "sr_rt.h"
+#include "sr_nat.h"
 
 /* we dont like this debug , but what to do for varargs ? */
 #ifdef _DEBUG_
@@ -53,7 +54,7 @@ struct sr_instance
     struct sr_if* if_list; /* list of interfaces */
     struct sr_rt* routing_table; /* routing table */
     struct sr_arpcache cache;   /* ARP cache */
-    struct sr_nat nat;  /* NAT */
+    struct sr_nat* nat;  /* NAT */
     pthread_attr_t attr;
     FILE* logfile;
 };
@@ -73,7 +74,7 @@ int sr_connect_to_server(struct sr_instance* ,unsigned short , char* );
 int sr_read_from_server(struct sr_instance* );
 
 /* -- sr_router.c -- */
-void sr_init(struct sr_instance* );
+void sr_init(struct sr_instance*, int);
 void sr_handlepacket(struct sr_instance* , uint8_t * , unsigned int , char* );
 
 /* -- sr_if.c -- */
