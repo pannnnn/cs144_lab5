@@ -67,10 +67,14 @@ int main(int argc, char **argv)
     unsigned int topo = DEFAULT_TOPO;
     char *logfile = 0;
     struct sr_instance sr;
+    int icmp_query = 60;
+    int tcp_established_idle = 7440;
+    int tcp_transitory_idle = 300;
+
 
     printf("Using %s\n", VERSION_INFO);
 
-    while ((c = getopt(argc, argv, "hs:v:p:u:t:r:l:T:n:")) != EOF)
+    while ((c = getopt(argc, argv, "hs:v:p:u:t:r:l:T:n:I:E:R:")) != EOF)
     {
         switch (c)
         {
@@ -104,6 +108,16 @@ int main(int argc, char **argv)
                 break;
             case 'n':
                 nat_enable = 1;
+            case 'I':
+                icmp_query = atoi(optarg);
+                break;
+            case 'E':
+                tcp_established_idle = atoi(optarg);
+                break;
+            case 'R':
+                tcp_transitory_idle = atoi(optarg);
+                break;
+
         } /* switch */
     } /* -- while -- */
 
@@ -160,7 +174,19 @@ int main(int argc, char **argv)
     }
 
     /* call router init (for arp subsystem etc.) */
-    sr_init(&sr, nat_enable);
+    sr_init(&sr);
+    if (nat_enable) {
+      sr.nat = malloc(sizeof(sr_nat_t));
+      sr_nat_init(&(sr.nat));
+
+      (sr.nat)->sr = &sr;
+      (sr.nat)->icmp_query = icmp_query;
+      (sr.nat)->tcp_established_idle = tcp_established_idle;
+      (sr.nat)->tcp_transitory_idle = tcp_transitory_idle;
+
+    } else {
+      sr->nat = NULL;
+    }
 
     /* -- whizbang main loop ;-) */
     while( sr_read_from_server(&sr) == 1);

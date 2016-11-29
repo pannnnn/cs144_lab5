@@ -32,7 +32,10 @@ struct sr_nat_mapping {
 struct sr_nat {
   /* add any fields here */
   struct sr_nat_mapping *mappings;
-
+  struct sr_instance *sr;
+  int icmp_query;
+  int tcp_established_idle;
+  int tcp_transitory_idle;
   /* threading */
   pthread_mutex_t lock;
   pthread_mutexattr_t attr;
