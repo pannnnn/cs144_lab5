@@ -2,7 +2,7 @@ README
 
 Yizhao Wang, wangyiz3
 Yuhui Pan, panyuhui
-Wen Hao Zhang, zhqn1782
+Wen Hao Zhang, zhan1782
 
 Following the pseudo code for sending a arp request when the difference in 
 time is greater than 1, resulted the tests for host unreachable to fail. 
