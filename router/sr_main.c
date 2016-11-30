@@ -176,8 +176,8 @@ int main(int argc, char **argv)
     /* call router init (for arp subsystem etc.) */
     sr_init(&sr);
     if (nat_enable) {
-      sr.nat = malloc(sizeof(sr_nat_t));
-      sr_nat_init(&(sr.nat));
+      sr.nat = malloc(sizeof(struct sr_nat));
+      sr_nat_init(sr.nat);
       (sr.nat)->sr = &sr;
       (sr.nat)->identifier_or_port = 1389;
       (sr.nat)->icmp_query = icmp_query;
@@ -185,7 +185,7 @@ int main(int argc, char **argv)
       (sr.nat)->tcp_transitory_idle = tcp_transitory_idle;
 
     } else {
-      sr->nat = NULL;
+      sr.nat = NULL;
     }
 
     /* -- whizbang main loop ;-) */

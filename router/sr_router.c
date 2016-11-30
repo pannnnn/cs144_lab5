@@ -23,7 +23,7 @@
 #include "sr_arpcache.h"
 #include "sr_utils.h"
 #include "sr_nat.h"
-#include "sr_nat.c"
+
 
 /*---------------------------------------------------------------------
  * Method: sr_init(void)
@@ -87,7 +87,7 @@ void sr_handlepacket(struct sr_instance* sr,
   /* check if it is a ip packet */
   if (type == ethertype_ip) {
     if (sr->nat) {
-      /*NAT enabled and received ip*/
+      nat_handle_ip(sr, packet, len, interface);
     } else {
       sr_handle_ip(sr, packet, len, interface);
     }
@@ -420,7 +420,7 @@ void nat_handle_ip(struct sr_instance* sr,
   if (valid_ip_packet(ip_packet, len - sizeof(sr_ethernet_hdr_t))) {
     struct sr_if* iface = in_if_list(sr, (uint32_t) ip_packet->ip_dst);
     /*Inbound to Inbound*/
-    if ((sr_get_interface(sr, "eth1")->ip == interface->ip) && iface) {
+    if (sr_get_interface(sr, ETH1)->ip == sr_get_interface(sr, interface)->ip && iface) {
       if (ip_packet->ip_p == ip_protocol_icmp) {
         /* Since it is internal to internal, handle it the way we used to. */
         sr_handle_ip(sr, packet, len, interface);
@@ -430,13 +430,13 @@ void nat_handle_ip(struct sr_instance* sr,
           sr_handle_ip(sr, packet, len, interface);
         }
       }
-    } else if (sr_get_interface(sr, "eth1")->ip == interface->ip) {
+    } else if (sr_get_interface(sr, ETH1)->ip == sr_get_interface(sr, interface)->ip) {
       /* The packet is going out*/
      
       if (ip_packet->ip_p == ip_protocol_icmp) {
-        sr_icmp_t0_hdr* icmp_packet = (sr_icmp_t0_hdr*) (ip_packet + ip_hl*4);
+        sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
         icmp_packet->icmp_sum = 0;
-        sr_nat_mapping_t* lookup_int = sr_nat_lookup_internal(sr->nat, 
+        struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat, 
                                                               ip_packet->ip_src, 
                                                               icmp_packet->icmp_id, 
                                                               nat_mapping_icmp);
@@ -446,13 +446,13 @@ void nat_handle_ip(struct sr_instance* sr,
                                              nat_mapping_icmp);
         }
         icmp_packet->icmp_id = lookup_int->aux_ext;
-        icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->hl*4);
+        icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
         ip_packet->ip_src = lookup_int->ip_ext;
-        
-
-
-
-        
+        lookup_int->last_updated = time(NULL);
+        ip_packet->ip_sum = 0;
+        ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+        struct sr_if *iface = sr_get_interface(sr, ETH2);
+        sr_handle_ip(sr, packet, len, iface->name);
       }
     }
   }
@@ -472,7 +472,7 @@ int valid_tcp_packet(sr_ip_hdr_t *packet, unsigned int len) {
   tcp_pseudo_hdr->src_ip = packet->ip_src;
   tcp_pseudo_hdr->dst_ip = packet->ip_dst;
   tcp_pseudo_hdr->reserved = 0;
-  tcp_pseudo_hdr->protocal = ip_protocol_tcp;
+  tcp_pseudo_hdr->protocol = ip_protocol_tcp;
   tcp_pseudo_hdr->length = htons(length);
 
   tcp_checksum = cksum(tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t) + length);

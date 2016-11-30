@@ -32,9 +32,13 @@
 #define INIT_TTL 255
 #define PACKET_DUMP_SIZE 1024
 
+#define ETH1 "eth1"
+#define ETH2 "eth2"
+
 /* forward declare */
 struct sr_if;
 struct sr_rt;
+struct sr_nat_mapping;
 
 /* ----------------------------------------------------------------------------
  * struct sr_instance
@@ -74,7 +78,7 @@ int sr_connect_to_server(struct sr_instance* ,unsigned short , char* );
 int sr_read_from_server(struct sr_instance* );
 
 /* -- sr_router.c -- */
-void sr_init(struct sr_instance*, int);
+void sr_init(struct sr_instance*);
 void sr_handlepacket(struct sr_instance* , uint8_t * , unsigned int , char* );
 
 /* -- sr_if.c -- */
@@ -83,4 +87,9 @@ void sr_set_ether_ip(struct sr_instance* , uint32_t );
 void sr_set_ether_addr(struct sr_instance* , const unsigned char* );
 void sr_print_if_list(struct sr_instance* );
 
+int valid_tcp_packet(sr_ip_hdr_t *, unsigned int);
+void nat_handle_ip(struct sr_instance*,
+                   uint8_t*,
+                   unsigned int,
+                   char*);
 #endif /* SR_ROUTER_H */

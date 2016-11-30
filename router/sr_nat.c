@@ -86,10 +86,10 @@ struct sr_nat_mapping *sr_nat_lookup_internal(struct sr_nat *nat,
   while (curr) {
     if (curr->type == type && curr->ip_int == ip_int && 
         curr->aux_int == aux_int) {
-      copy = malloc(sizeof(sr_nat_mapping));
-      memcpy(copy, curr, sizeof(sr_nat_mapping));
+      copy = malloc(sizeof(struct sr_nat_mapping));
+      memcpy(copy, curr, sizeof(struct sr_nat_mapping));
       pthread_mutex_unlock(&(nat->lock));
-      return copy
+      return copy;
     }
     curr = curr->next;
   } 
@@ -108,10 +108,10 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   pthread_mutex_lock(&(nat->lock));
 
   /* handle insert here, create a mapping, and then return a copy of it */
-  struct sr_nat_mapping *mapping = malloc(sizeof(sr_nat_mapping));
+  struct sr_nat_mapping *mapping = malloc(sizeof(struct sr_nat_mapping));
   mapping->type = type;
   mapping->ip_int = ip_int;
-  mapping->ip_ext = sr_get_interface(nat->sr, "eth2")->ip;
+  mapping->ip_ext = sr_get_interface(nat->sr, ETH2)->ip;
   mapping->aux_int = aux_int;
   if (nat->identifier_or_port > 35876) {
     nat->identifier_or_port = 1389;
@@ -119,7 +119,7 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   mapping->aux_ext = nat->identifier_or_port;
   nat->identifier_or_port++;
   mapping->last_updated = time(NULL);
-  mapping->conn = NULL;
+  mapping->conns = NULL;
   mapping->next = nat->mappings;
   nat->mappings = mapping;
   pthread_mutex_unlock(&(nat->lock));
