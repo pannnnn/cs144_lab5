@@ -451,8 +451,9 @@ void nat_handle_ip(struct sr_instance* sr,
         lookup_int->last_updated = time(NULL);
         ip_packet->ip_sum = 0;
         ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-        struct sr_if *iface = sr_get_interface(sr, ETH2);
+        struct sr_if *iface = sr_get_interface(sr, ETH1);
         sr_handle_ip(sr, packet, len, iface->name);
+        free(lookup_int);
       }
     }
   }
