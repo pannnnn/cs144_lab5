@@ -41,7 +41,6 @@ void handle_arpreq(struct sr_instance* sr, struct sr_arpreq *req) {
             /* Send ICMP host unreachable*/
             struct sr_packet* req_packet= req->packets;
             while(req_packet){
-                printf("1 host lost\n");
                 
                 sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t*) (req_packet->buf + 
                                                       sizeof(sr_ethernet_hdr_t));
@@ -78,8 +77,6 @@ void arp_request(struct sr_instance *sr, struct sr_arpreq *req) {
             send the request to that interface
          */
         iface = sr_get_interface(sr, rt->interface);    
-    } else {
-        printf("no rt found\n");
     }
     
 

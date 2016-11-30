@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "sr_nat.h"
 #include <unistd.h>
+#include "sr_if.h"
 
 int sr_nat_init(struct sr_nat *nat) { /* Initializes the nat */
 
@@ -80,6 +81,19 @@ struct sr_nat_mapping *sr_nat_lookup_internal(struct sr_nat *nat,
 
   /* handle lookup here, malloc and assign to copy. */
   struct sr_nat_mapping *copy = NULL;
+  struct sr_nat_mapping *curr = nat->mappings;
+
+  while (curr) {
+    if (curr->type == type && curr->ip_int == ip_int && 
+        curr->aux_int == aux_int) {
+      copy = malloc(sizeof(sr_nat_mapping));
+      memcpy(copy, curr, sizeof(sr_nat_mapping));
+      pthread_mutex_unlock(&(nat->lock));
+      return copy
+    }
+    curr = curr->next;
+  } 
+
 
   pthread_mutex_unlock(&(nat->lock));
   return copy;
@@ -94,7 +108,19 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   pthread_mutex_lock(&(nat->lock));
 
   /* handle insert here, create a mapping, and then return a copy of it */
-  struct sr_nat_mapping *mapping = NULL;
+  struct sr_nat_mapping *mapping = malloc(sizeof(sr_nat_mapping));
+  mapping->type = type;
+  mapping->ip_int = ip_int;
+  mapping->ip_ext = sr_get_interface(nat->sr, "eth2")->ip;
+  mapping->aux_int = aux_int;
+  if (nat->identifier_or_port > 35876) {
+    nat->identifier_or_port = 1389;
+  }
+  mapping->aux_ext = nat->identifier_or_port + 1;
+  nat->identifier_or_port++;
+  mapping->last_updated = time(NULL);
+  mapping->conn = NULL;
+  mapping->next = nat->mappings;
 
   pthread_mutex_unlock(&(nat->lock));
   return mapping;

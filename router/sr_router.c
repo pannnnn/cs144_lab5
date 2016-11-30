@@ -409,3 +409,71 @@ struct sr_if* in_if_list(struct sr_instance* sr, uint32_t ip) {
   }
   return NULL;
 }
+
+void nat_handle_ip(struct sr_instance* sr,
+                   uint8_t* packet,
+                   unsigned int len,
+                   char* interface)
+{
+  sr_ip_hdr_t* ip_packet = (sr_ip_hdr_t*)
+                           (packet + sizeof(sr_ethernet_hdr_t));
+  if (valid_ip_packet(ip_packet, len - sizeof(sr_ethernet_hdr_t))) {
+    struct sr_if* iface = in_if_list(sr, (uint32_t) ip_packet->ip_dst);
+    /*Inbound to Inbound*/
+    if ((sr_get_interface(sr, "eth1")->ip == interface->ip) && iface) {
+      if (ip_packet->ip_p == ip_protocol_icmp) {
+        /* Since it is internal to internal, handle it the way we used to. */
+        sr_handle_ip(sr, packet, len, interface);
+      } else if (ip_packet->ip_p == ip_protocol_tcp) {
+        /* Validdate the tcp packet with pseudo header*/
+        if (valid_tcp_packet(ip_packet, len)) {
+          sr_handle_ip(sr, packet, len, interface);
+        }
+      }
+    } else if (sr_get_interface(sr, "eth1")->ip == interface->ip) {
+      /* The packet is going out*/
+      sr_icmp_t0_hdr* icmp_packet = (sr_icmp_t0_hdr*) (ip_packet + ip_hl*4);
+      if (ip_packet->ip_p == ip_protocol_icmp) {
+        sr_nat_mapping_t* lookup_int = sr_nat_lookup_internal(sr->nat, 
+                                                              ip_packet->ip_src, 
+                                                              icmp_packet->icmp_id, 
+                                                              nat_mapping_icmp);
+        if (!lookup_int) {
+          lookup_int = sr_nat_insert_mapping(sr->nat, ip_packet->ip_src,
+                                             icmp_packet->icmp_id,
+                                             nat_mapping_icmp);
+        }
+        
+      }
+    }
+  }
+}
+
+int valid_tcp_packet(sr_ip_hdr_t *packet, unsigned int len) {
+  int length = len - packet->ip_hl*4;
+  sr_tcp_hdr_t* tcp_hdr  = (sr_tcp_hdr_t*) (packet + 
+                                           sizeof(sr_ethernet_hdr_t) + 
+                                           packet->ip_hl*4);
+  sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t) + 
+                                               length);
+  uint16_t tcp_checksum = 0;
+  uint16_t packet_tcp_checksum = tcp_hdr->checksum;
+  tcp_hdr->checksum = 0;
+  memcpy(tcp_pseudo_hdr + sizeof(sr_tcp_pseudo_hdr_t), tcp_hdr, length);
+  tcp_pseudo_hdr->src_ip = packet->ip_src;
+  tcp_pseudo_hdr->dst_ip = packet->ip_dst;
+  tcp_pseudo_hdr->reserved = 0;
+  tcp_pseudo_hdr->protocal = ip_protocol_tcp;
+  tcp_pseudo_hdr->length = htons(length);
+
+  tcp_checksum = cksum(tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t) + length);
+  if (tcp_checksum == packet_tcp_checksum) {
+    free(tcp_pseudo_hdr);
+    return 1;
+  } else {
+    free(tcp_pseudo_hdr);
+    return 0;
+  }
+
+
+}

@@ -36,6 +36,9 @@ struct sr_nat {
   int icmp_query;
   int tcp_established_idle;
   int tcp_transitory_idle;
+  uint16_t identifier_or_port;
+  uint32_t ip_int;
+  uint32_t ip_ext;
   /* threading */
   pthread_mutex_t lock;
   pthread_mutexattr_t attr;

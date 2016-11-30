@@ -101,8 +101,40 @@ struct sr_icmp_t3_hdr {
 } __attribute__ ((packed)) ;
 typedef struct sr_icmp_t3_hdr sr_icmp_t3_hdr_t;
 
+struct sr_icmp_t0_hdr {
+  uint8_t icmp_type;
+  uint8_t icmp_code;
+  uint16_t icmp_sum;
+  uint16_t icmp_id;
+  uint16_t icmp_seq_n;
+  uint8_t data[ICMP_DATA_SIZE];
 
+} __attribute__ ((packed)) ;
+typedef struct sr_icmp_t0_hdr sr_icmp_t0_hdr_t;
 
+struct sr_tcp_hdr {
+  uint16_t src_port;
+  uint16_t dst_port;
+  uint32_t seq_n;
+  uint32_t ack_n;
+  uint16_t offset;
+  uint16_t flags;
+  uint16_t window;
+  uint16_t checksum;
+  uint16_t urgent_ptr;
+
+} __attribute__ ((packed)) ;
+typedef struct sr_tcp_hdr sr_tcp_hdr_t;
+
+struct sr_tcp_pseudo_hdr {
+  uint32_t src_ip;
+  uint32_t dst_ip;
+  uint8_t reserved;
+  uint8_t protocol;
+  uint16_t length;
+
+} __attribute__ ((packed)) ;
+typedef struct sr_tcp_pseudo_hdr sr_tcp_pseudo_hdr_t;
 
 /*
  * Structure of an internet header, naked of options.
