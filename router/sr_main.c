@@ -108,6 +108,7 @@ int main(int argc, char **argv)
                 break;
             case 'n':
                 nat_enable = 1;
+                break;
             case 'I':
                 icmp_query = atoi(optarg);
                 break;
