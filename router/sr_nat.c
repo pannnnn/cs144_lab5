@@ -116,12 +116,12 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   if (nat->identifier_or_port > 35876) {
     nat->identifier_or_port = 1389;
   }
-  mapping->aux_ext = nat->identifier_or_port + 1;
+  mapping->aux_ext = nat->identifier_or_port;
   nat->identifier_or_port++;
   mapping->last_updated = time(NULL);
   mapping->conn = NULL;
   mapping->next = nat->mappings;
-
+  nat->mappings = mapping;
   pthread_mutex_unlock(&(nat->lock));
   return mapping;
 }

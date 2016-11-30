@@ -432,8 +432,10 @@ void nat_handle_ip(struct sr_instance* sr,
       }
     } else if (sr_get_interface(sr, "eth1")->ip == interface->ip) {
       /* The packet is going out*/
-      sr_icmp_t0_hdr* icmp_packet = (sr_icmp_t0_hdr*) (ip_packet + ip_hl*4);
+     
       if (ip_packet->ip_p == ip_protocol_icmp) {
+        sr_icmp_t0_hdr* icmp_packet = (sr_icmp_t0_hdr*) (ip_packet + ip_hl*4);
+        icmp_packet->icmp_sum = 0;
         sr_nat_mapping_t* lookup_int = sr_nat_lookup_internal(sr->nat, 
                                                               ip_packet->ip_src, 
                                                               icmp_packet->icmp_id, 
@@ -443,6 +445,13 @@ void nat_handle_ip(struct sr_instance* sr,
                                              icmp_packet->icmp_id,
                                              nat_mapping_icmp);
         }
+        icmp_packet->icmp_id = lookup_int->aux_ext;
+        icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->hl*4);
+        ip_packet->ip_src = lookup_int->ip_ext;
+        
+
+
+
         
       }
     }
