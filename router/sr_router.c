@@ -222,6 +222,7 @@ void sr_handle_ip(struct sr_instance* sr,
       ip packet */
       struct sr_rt* next_hop = get_next_hop(sr, ip_packet->ip_dst);
       if (next_hop) {
+        printf("Sending some kind of a packet\n");
         /*
           Send back a type 11 icmp packet through found interface if ttl
           becomes 0 when a packet arrive in the router
@@ -470,10 +471,12 @@ void nat_handle_ip(struct sr_instance* sr,
                                                                 tcp_packet->src_port,
                                                                 nat_mapping_tcp);
           if (!lookup_int && !((ntohs(tcp_packet->flags) & 0x2) >> 1)) {
+            printf("Not a syn but going out\n");
           /**No mapping and wants to sent a tcp packet out*/
             return;
           } else if ((ntohs(tcp_packet->flags) & 0x2) >> 1) {
               if (lookup_int) {
+                printf("there is a mapping\n");
                 pthread_mutex_lock(&((sr->nat)->lock));
                 struct sr_nat_mapping *int_mapping = sr_nat_internal_mapping(sr->nat,
                                                                       ip_packet->ip_src,
@@ -482,7 +485,9 @@ void nat_handle_ip(struct sr_instance* sr,
                 struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(int_mapping,
                                                                       ip_packet->ip_dst,
                                                                       tcp_packet->dst_port);
+
                 if (!lookup_conns) {
+                  printf("new connection\n");
                   sr_nat_insert_connection(int_mapping, ip_packet->ip_dst, tcp_packet->dst_port);
                 } else if (lookup_conns->tcp_state == SYN_RECEIVED) {
                   lookup_conns->tcp_state = ESTABLISHED;
@@ -498,6 +503,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 iface = sr_get_interface(sr, ETH1);
+                printf("handleing the packet\n");
                 sr_handle_ip(sr, packet, len, iface->name);
                 free(lookup_int);
               } else {
