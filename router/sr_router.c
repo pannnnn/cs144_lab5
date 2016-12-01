@@ -466,7 +466,7 @@ void nat_handle_ip(struct sr_instance* sr,
         if (ip_packet->ip_p == ip_protocol_icmp) {
           /* if not matching is found for the destination then drop the packet and send back dest unreachable */
           if (get_next_hop(sr,ip_packet->ip_dst) == NULL){
-            icmp_type3_type11(sr, ip_packet, 3, 0, ETH1);
+            icmp_type3_type11(sr, ip_packet, 3, 0, ETH2);
           }else{
             sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
             icmp_packet->icmp_sum = 0;
