@@ -95,7 +95,7 @@ struct sr_nat_mapping *sr_nat_lookup_internal(struct sr_nat *nat,
   struct sr_nat_mapping *curr = nat->mappings;
 
   while (curr) {
-    if (curr->type == type && curr->ip_int == ip_int && 
+    if (curr->type == type && curr->ip_int == ip_int &&
         curr->aux_int == aux_int) {
       copy = malloc(sizeof(struct sr_nat_mapping));
       memcpy(copy, curr, sizeof(struct sr_nat_mapping));
@@ -103,9 +103,7 @@ struct sr_nat_mapping *sr_nat_lookup_internal(struct sr_nat *nat,
       return copy;
     }
     curr = curr->next;
-  } 
-
-
+  }
   pthread_mutex_unlock(&(nat->lock));
   return copy;
 }
@@ -133,6 +131,8 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   mapping->conns = NULL;
   mapping->next = nat->mappings;
   nat->mappings = mapping;
+  struct sr_nat_mapping *copy = malloc(sizeof(struct sr_nat_mapping));
+  memcpy(copy, mapping, sizeof(struct sr_nat_mapping));
   pthread_mutex_unlock(&(nat->lock));
-  return mapping;
+  return copy;
 }
