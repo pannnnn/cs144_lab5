@@ -259,7 +259,7 @@ void sr_handle_ip(struct sr_instance* sr,
         if (entry) {
           memcpy(new_ether_hdr->ether_dhost, entry->mac, 6);
           sr_send_packet(sr, new_ether, len, next_hop->interface);
-          free(entry);
+          /*free(entry);*/
         } else {
           sr_arpcache_queuereq(&(sr->cache), ip_packet->ip_dst, new_ether,
                                len, next_hop->interface);
