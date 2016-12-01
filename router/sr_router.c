@@ -437,25 +437,31 @@ void nat_handle_ip(struct sr_instance* sr,
       /* The packet is going out */
      
       if (ip_packet->ip_p == ip_protocol_icmp) {
-        sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
-        icmp_packet->icmp_sum = 0;
-        struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat, 
-                                                              ip_packet->ip_src, 
-                                                              icmp_packet->icmp_id, 
-                                                              nat_mapping_icmp);
-        if (!lookup_int) {
-          lookup_int = sr_nat_insert_mapping(sr->nat, ip_packet->ip_src,
-                                             icmp_packet->icmp_id,
-                                             nat_mapping_icmp);
+        /* if not matching is found for the destination then drop the packet and send back dest unreachable */
+        if (get_next_hop(sr,ip_packet->ip_dst) == NULL){
+          struct sr_rt* return_route = get_next_hop(sr, ip_packet->ip_src);
+          icmp_type3_type11(sr, ip_packet, 3, 0, return_route->interface);
+        }else{
+          sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
+          icmp_packet->icmp_sum = 0;
+          struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat, 
+                                                                ip_packet->ip_src, 
+                                                                icmp_packet->icmp_id, 
+                                                                nat_mapping_icmp);
+          if (!lookup_int) {
+            lookup_int = sr_nat_insert_mapping(sr->nat, ip_packet->ip_src,
+                                              icmp_packet->icmp_id,
+                                              nat_mapping_icmp);
+          }
+          icmp_packet->icmp_id = lookup_int->aux_ext;
+          icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
+          ip_packet->ip_src = lookup_int->ip_ext;
+          lookup_int->last_updated = time(NULL);
+          ip_packet->ip_sum = 0;
+          ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+          struct sr_if *iface = sr_get_interface(sr, ETH1);
+          sr_handle_ip(sr, packet, len, iface->name);
         }
-        icmp_packet->icmp_id = lookup_int->aux_ext;
-        icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
-        ip_packet->ip_src = lookup_int->ip_ext;
-        lookup_int->last_updated = time(NULL);
-        ip_packet->ip_sum = 0;
-        ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-        struct sr_if *iface = sr_get_interface(sr, ETH1);
-        sr_handle_ip(sr, packet, len, iface->name);
       }
     }else{
       if (sr_get_interface(sr, ETH2)->ip == sr_get_interface(sr, interface)->ip) {
@@ -480,9 +486,10 @@ void nat_handle_ip(struct sr_instance* sr,
               struct sr_if *iface = sr_get_interface(sr, ETH2);
               sr_handle_ip(sr, packet, len, iface->name);
             }
+          }else{
+            /* imcp, tcp, or other packets sent between external servers */
+            sr_handle_ip(sr, packet, len, iface->name);
           }
-          /* imcp, tcp, or other packets sent between external servers */
-          sr_handle_ip(sr, packet, len, iface->name);
         }
       }
     }
