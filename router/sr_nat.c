@@ -102,6 +102,11 @@ struct sr_nat_mapping *sr_nat_lookup_internal(struct sr_nat *nat,
       copy = malloc(sizeof(struct sr_nat_mapping));
       memcpy(copy, curr, sizeof(struct sr_nat_mapping));
       pthread_mutex_unlock(&(nat->lock));
+      printf("Printing mapping\n");
+      printf("%d\n",curr->ip_int);
+      printf("%d\n",curr->ip_ext);
+      printf("%d\n",curr->aux_int);
+      printf("%d\n",curr->aux_ext);
       return copy;
     }
     curr = curr->next;
