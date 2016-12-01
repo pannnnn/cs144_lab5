@@ -459,6 +459,15 @@ void nat_handle_ip(struct sr_instance* sr,
       }
     }else{
       if (sr_get_interface(sr, ETH2)->ip == sr_get_interface(sr, interface)->ip) {
+        if(iface){
+          if(iface->ip == sr_get_interface(sr, ETH2)->ip){
+            sr_handle_ip(sr, packet, len, iface->name);
+          }
+          if(iface->ip == sr_get_interface(sr, ETH1)->ip){
+            struct sr_rt* next_hop = get_next_hop(sr, ip_packet->ip_src);
+            icmp_type3_type11(sr, ip_packet, 3, 0, next_hop->interface);
+          }
+        }
         if (ip_packet->ip_p == ip_protocol_icmp) {
           sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
           icmp_packet->icmp_sum = 0;
