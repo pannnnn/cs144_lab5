@@ -470,6 +470,7 @@ void nat_handle_ip(struct sr_instance* sr,
                                                                 ip_packet->ip_src,
                                                                 tcp_packet->src_port,
                                                                 nat_mapping_tcp);
+          printf("%d\n", ((ntohs(tcp_packet->flags) & 0x2) >> 1));
           if (!lookup_int && !((ntohs(tcp_packet->flags) & 0x2) >> 1)) {
             printf("Not a syn but going out\n");
           /**No mapping and wants to sent a tcp packet out*/
