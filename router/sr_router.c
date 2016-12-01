@@ -496,11 +496,8 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-                iface = sr_get_interface(sr, ETH2);
-                memcpy(((sr_ethernet_hdr_t*) packet)->ether_shost, iface->addr, ETHER_ADDR_LEN);
-                memcpy(((sr_ethernet_hdr_t*) packet)->ether_dhost, iface->addr, ETHER_ADDR_LEN);
-                sr_send_packet(sr, packet, len, iface->name);
-                /*sr_handle_ip(sr, packet, len, iface->name);*/
+                iface = sr_get_interface(sr, ETH1);
+                sr_handle_ip(sr, packet, len, iface->name);
                 free(lookup_int);
               } else {
                 printf("SYN FLAG SENT OUT\n");
@@ -525,12 +522,10 @@ void nat_handle_ip(struct sr_instance* sr,
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 print_hdr_ip(ip_packet);
-                iface = sr_get_interface(sr, ETH2);
+                iface = sr_get_interface(sr, ETH1);
                 /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
-                memcpy(((sr_ethernet_hdr_t*) packet)->ether_shost, iface->addr, ETHER_ADDR_LEN);
-                memcpy(((sr_ethernet_hdr_t*) packet)->ether_dhost, iface->addr, ETHER_ADDR_LEN);
-                sr_send_packet(sr, packet, len, iface->name);
-                /*sr_handle_ip(sr, packet, len, iface->name);*/
+
+                sr_handle_ip(sr, packet, len, iface->name);
               }
           } else if ((ntohs(tcp_packet->flags) & 0x1)) {
             pthread_mutex_lock(&((sr->nat)->lock));
@@ -549,12 +544,10 @@ void nat_handle_ip(struct sr_instance* sr,
             tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
             ip_packet->ip_sum = 0;
             ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-            iface = sr_get_interface(sr, ETH2);
+            iface = sr_get_interface(sr, ETH1);
             /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
-            memcpy(((sr_ethernet_hdr_t*) packet)->ether_shost, iface->addr, ETHER_ADDR_LEN);
-            memcpy(((sr_ethernet_hdr_t*) packet)->ether_dhost, iface->addr, ETHER_ADDR_LEN);
-            sr_send_packet(sr, packet, len, iface->name);
-            /*sr_handle_ip(sr, packet, len, iface->name);*/
+
+            sr_handle_ip(sr, packet, len, iface->name);
           }
       }
     } else {
