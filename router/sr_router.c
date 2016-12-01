@@ -581,8 +581,13 @@ void nat_handle_ip(struct sr_instance* sr,
                 sr_handle_ip(sr, packet, len, ETH2);
               }
             }else{
-              /* imcp, tcp, or other packets sent to somewhere else*/
-              sr_handle_ip(sr, packet, len, ETH2);
+              struct sr_rt* next_hop = get_next_hop(sr,ip_packet->ip_dst);
+              if(sr_get_interface(sr, next_hop->interface)->ip == sr_get_interface(sr, ETH1)->ip){
+-               printf("dropping direct external -> internal packet\n");
+              }else{
+                /* imcp, tcp, or other packets sent to somewhere else*/
+                sr_handle_ip(sr, packet, len, ETH2);
+              }
             }
         }
       }
