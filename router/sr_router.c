@@ -463,6 +463,7 @@ void nat_handle_ip(struct sr_instance* sr,
           if(iface->ip == sr_get_interface(sr, ETH2)->ip){
             sr_handle_ip(sr, packet, len, iface->name);
           }
+          printf("%d\n",sr_get_interface(sr, ETH1)->ip);
           if(iface->ip == sr_get_interface(sr, ETH1)->ip){
             struct sr_rt* next_hop = get_next_hop(sr, ip_packet->ip_src);
             icmp_type3_type11(sr, ip_packet, 3, 0, next_hop->interface);
