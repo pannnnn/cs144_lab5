@@ -83,7 +83,7 @@ struct sr_icmp_hdr {
   uint8_t icmp_type;
   uint8_t icmp_code;
   uint16_t icmp_sum;
-  
+
 } __attribute__ ((packed)) ;
 typedef struct sr_icmp_hdr sr_icmp_hdr_t;
 
@@ -117,7 +117,6 @@ struct sr_tcp_hdr {
   uint16_t dst_port;
   uint32_t seq_n;
   uint32_t ack_n;
-  uint16_t offset;
   uint16_t flags;
   uint16_t window;
   uint16_t checksum;
@@ -148,8 +147,8 @@ struct sr_ip_hdr
     unsigned int ip_v:4;		/* version */
     unsigned int ip_hl:4;		/* header length */
 #else
-#error "Byte ordering ot specified " 
-#endif 
+#error "Byte ordering ot specified "
+#endif
     uint8_t ip_tos;			/* type of service */
     uint16_t ip_len;			/* total length */
     uint16_t ip_id;			/* identification */
@@ -165,7 +164,7 @@ struct sr_ip_hdr
   } __attribute__ ((packed)) ;
 typedef struct sr_ip_hdr sr_ip_hdr_t;
 
-/* 
+/*
  *  Ethernet packet header prototype.  Too many O/S's define this differently.
  *  Easy enough to solve that and define it here.
  */
