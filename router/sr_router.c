@@ -441,7 +441,7 @@ void nat_handle_ip(struct sr_instance* sr,
       /* The packet is going out */
      
       if (ip_packet->ip_p == ip_protocol_icmp) {
-        /* if not matching is found for the destination then drop the packet and send back dest unreachable */
+        /* if no matching is found for the destination then drop the packet and send back dest unreachable */
         if (get_next_hop(sr,ip_packet->ip_dst) == NULL){
           icmp_type3_type11(sr, ip_packet, 3, 0, ETH1);
         }else{
@@ -573,6 +573,7 @@ void nat_handle_ip(struct sr_instance* sr,
             if(iface){
               if (!lookup_ext) {
                 /* handle imcp or tcp targeted to one of the interfaces from server1 or server2*/
+                printf("No mappping found");
                 sr_handle_ip(sr, packet, len, ETH2);
               }else{
                 /* handle icmp reply from server*/
