@@ -573,6 +573,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 /* handle icmp reply from server*/
                 icmp_packet->icmp_id = lookup_ext->aux_int;
                 icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
+                ip_packet->ip_src = sr_get_interface(sr, ETH1)->ip;
                 ip_packet->ip_dst = lookup_ext->ip_int;
                 lookup_ext->last_updated = time(NULL);
                 ip_packet->ip_sum = 0;
