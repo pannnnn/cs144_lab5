@@ -264,7 +264,7 @@ void sr_handle_ip(struct sr_instance* sr,
         return;
       /*ived_packet,
                                  len - sizeof(sr_ethernet_hdr_t) +
-                                  ip_packet->ip_hl * 4);*/
+                                  ip_packet->ip_hl * 4);
           /* To see if a packet is still valid by looking at
         Sent if there is a non-existent route to the destination IP
       */
@@ -426,36 +426,40 @@ void nat_handle_ip(struct sr_instance* sr,
     if (sr_get_interface(sr, ETH1)->ip == sr_get_interface(sr, interface)->ip && iface) {
       if (ip_packet->ip_p == ip_protocol_icmp) {
         /* Since it is internal to internal, handle it the way we used to. */
-        sr_handle_ip(sr, packet, len, interface);
+        sr_handle_ip(sr, packet, len, ETH1);
       } else if (ip_packet->ip_p == ip_protocol_tcp) {
         /* Validdate the tcp packet with pseudo header*/
-        if (valid_tcp_packet(ip_packet, len-sizeof(sr_ethernet_hdr_t))) {
-          sr_handle_ip(sr, packet, len, interface);
+        if (valid_tcp_packet(ip_packet, len)) {
+          sr_handle_ip(sr, packet, len, ETH1);
         }
       }
     } else if (sr_get_interface(sr, ETH1)->ip == sr_get_interface(sr, interface)->ip) {
+      /* The packet is going out */
+     
       if (ip_packet->ip_p == ip_protocol_icmp) {
-        printf("Handling internal to external ICMP\n");
-        fflush(stdout);
-        sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
-        icmp_packet->icmp_sum = 0;
-        struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat,
-                                                              ip_packet->ip_src,
-                                                              icmp_packet->icmp_id,
-                                                              nat_mapping_icmp);
-        if (!lookup_int) {
-          lookup_int = sr_nat_insert_mapping(sr->nat, ip_packet->ip_src,
-                                             icmp_packet->icmp_id,
-                                             nat_mapping_icmp);
+        /* if not matching is found for the destination then drop the packet and send back dest unreachable */
+        if (get_next_hop(sr,ip_packet->ip_dst) == NULL){
+          icmp_type3_type11(sr, ip_packet, 3, 0, ETH1);
+        }else{
+          sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
+          icmp_packet->icmp_sum = 0;
+          struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat, 
+                                                                ip_packet->ip_src, 
+                                                                icmp_packet->icmp_id, 
+                                                                nat_mapping_icmp);
+          if (!lookup_int) {
+            lookup_int = sr_nat_insert_mapping(sr->nat, ip_packet->ip_src,
+                                              icmp_packet->icmp_id,
+                                              nat_mapping_icmp);
+          }
+          icmp_packet->icmp_id = lookup_int->aux_ext;
+          icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
+          ip_packet->ip_src = lookup_int->ip_ext;
+          lookup_int->last_updated = time(NULL);
+          ip_packet->ip_sum = 0;
+          ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+          sr_handle_ip(sr, packet, len, ETH1);
         }
-        icmp_packet->icmp_id = lookup_int->aux_ext;
-        icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
-        ip_packet->ip_src = lookup_int->ip_ext;
-        ip_packet->ip_sum = 0;
-        ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-        iface = sr_get_interface(sr, ETH2);
-        /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
-        sr_handle_ip(sr, packet, len, iface->name);
       } else if (ip_packet->ip_p == ip_protocol_tcp) {
           printf("Handling internal to external TCP\n");
           fflush(stdout);
@@ -542,40 +546,54 @@ void nat_handle_ip(struct sr_instance* sr,
           }
       }
     } else {
-      printf("The packet is coming from an external interface.\n");
-      fflush(stdout);
       if (sr_get_interface(sr, ETH2)->ip == sr_get_interface(sr, interface)->ip) {
         if (ip_packet->ip_p == ip_protocol_icmp) {
-          sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
-          icmp_packet->icmp_sum = 0;
-          struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat,
-                                                              icmp_packet->icmp_id,
-                                                              nat_mapping_icmp);
-          if (!lookup_ext) {
-            return;
+          /* if not matching is found for the destination then drop the packet and send back dest unreachable */
+          if (get_next_hop(sr,ip_packet->ip_dst) == NULL){
+            icmp_type3_type11(sr, ip_packet, 3, 0, ETH2);
+          }else{
+            sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
+            icmp_packet->icmp_sum = 0;
+            struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat, 
+                                                                icmp_packet->icmp_id, 
+                                                                nat_mapping_icmp);
+            if(iface){
+              if (!lookup_ext) {
+                /* handle imcp or tcp targeted to one of the interfaces from server1 or server2*/
+                sr_handle_ip(sr, packet, len, ETH2);
+              }else{
+                /* handle responding icmp from server*/
+                icmp_packet->icmp_id = lookup_ext->aux_int;
+                icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
+                ip_packet->ip_dst = lookup_ext->ip_int;
+                lookup_ext->last_updated = time(NULL);
+                ip_packet->ip_sum = 0;
+                ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+                sr_handle_ip(sr, packet, len, ETH2);
+              }
+            }else{
+              struct sr_rt* next_hop = get_next_hop(sr,ip_packet->ip_dst);
+              if(!next_hop){
+                if(sr_get_interface(sr, next_hop->interface)->ip == sr_get_interface(sr, ETH2)->ip){
+                  /* imcp, tcp, or other packets sent between external servers */
+                  sr_handle_ip(sr, packet, len, ETH2);
+                }
+              }
+              /* server trying to ping client, we need to drop the packet */
+            }
           }
-          icmp_packet->icmp_id = lookup_ext->aux_int;
-          icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
-          ip_packet->ip_dst = lookup_ext->ip_int;
-          lookup_ext->last_updated = time(NULL);
-          ip_packet->ip_sum = 0;
-          ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-          struct sr_if *iface = sr_get_interface(sr, ETH2);
-          /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
-          sr_handle_ip(sr, packet, len, iface->name);
         }
       }
     }
   }
-} 
-
-
+}
 
 int valid_tcp_packet(sr_ip_hdr_t *packet, unsigned int len) {
   int length = len - packet->ip_hl*4;
-  sr_tcp_hdr_t* tcp_hdr  = (sr_tcp_hdr_t*) (packet +
-                                            packet->ip_hl*4);
-  sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t) +
+  sr_tcp_hdr_t* tcp_hdr  = (sr_tcp_hdr_t*) (packet + 
+                                           sizeof(sr_ethernet_hdr_t) + 
+                                           packet->ip_hl*4);
+  sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t) + 
                                                length);
   uint16_t tcp_checksum = 0;
   uint16_t packet_tcp_checksum = tcp_hdr->checksum;
@@ -613,3 +631,4 @@ void tcp_checksum(sr_ip_hdr_t *packet, unsigned int len){
   tcp_hdr->checksum  = cksum(tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t) + length);
   free(tcp_pseudo_hdr);
 }
+
