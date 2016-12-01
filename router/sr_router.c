@@ -264,7 +264,7 @@ void sr_handle_ip(struct sr_instance* sr,
         return;
       /*ived_packet,
                                  len - sizeof(sr_ethernet_hdr_t) +
-                                  ip_packet->ip_hl * 4);
+                                  ip_packet->ip_hl * 4);*/
           /* To see if a packet is still valid by looking at
         Sent if there is a non-existent route to the destination IP
       */
@@ -429,166 +429,14 @@ void nat_handle_ip(struct sr_instance* sr,
         sr_handle_ip(sr, packet, len, ETH1);
       } else if (ip_packet->ip_p == ip_protocol_tcp) {
         /* Validdate the tcp packet with pseudo header*/
-<<<<<<< HEAD
-        if (valid_tcp_packet(ip_packet, len-sizeof(sr_ethernet_hdr_t))) {
-          sr_handle_ip(sr, packet, len, interface);
-        }
-      }
-    } else if (sr_get_interface(sr, ETH1)->ip == sr_get_interface(sr, interface)->ip) {
-      /* The packet is going out*/
-
-      if (ip_packet->ip_p == ip_protocol_icmp) {
-        printf("Handling internal to external ICMP\n");
-        fflush()
-        sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
-        icmp_packet->icmp_sum = 0;
-        struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat,
-                                                              ip_packet->ip_src,
-                                                              icmp_packet->icmp_id,
-                                                              nat_mapping_icmp);
-        if (!lookup_int) {
-          lookup_int = sr_nat_insert_mapping(sr->nat, ip_packet->ip_src,
-                                             icmp_packet->icmp_id,
-                                             nat_mapping_icmp);
-        }
-        icmp_packet->icmp_id = lookup_int->aux_ext;
-        icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
-        ip_packet->ip_src = lookup_int->ip_ext;
-        ip_packet->ip_sum = 0;
-        ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-        iface = sr_get_interface(sr, ETH2);
-        /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
-        sr_handle_ip(sr, packet, len, iface->name);
-      } else if (ip_packet->ip_p == ip_protocol_tcp) {
-        printf("Handling internal to external TCP\n");
-        fflush();
-        sr_tcp_hdr_t* tcp_packet = (sr_tcp_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
-        struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat,
-                                                              ip_packet->ip_src,
-                                                              tcp_packet->src_port,
-                                                              nat_mapping_tcp);
-        if (!lookup_int && !((ntohs(tcp_packet->flags) & 0x2) >> 1)) {
-          /**No mapping and wants to sent a tcp packet out*/
-          return;
-        }  else if ((ntohs(tcp_packet->flags) & 0x2) >> 1) {
-          if (lookup_int) {
-            pthread_mutex_lock(&((sr->nat)->lock));
-            struct sr_nat_mapping *int_mapping = sr_nat_internal_mapping(sr->nat,
-                                                                  ip_packet->ip_src,
-                                                                  tcp_packet->src_port,
-                                                                  nat_mapping_tcp);
-            struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(int_mapping,
-                                                                  ip_packet->ip_dst,
-                                                                  tcp_packet->dst_port);
-            if (!lookup_conns) {
-              sr_nat_insert_connection(int_mapping, ip_packet->ip_dst,
-                                       tcp_packet->dst_port);
-            } else if (lookup_conns->tcp_state == SYN_RECEIVED) {
-              lookup_conns->tcp_state = ESTABLISHED;
-              if (lookup_conns->syn_received) {
-                free(lookup_conns->syn_received)
-              }
-            } else if (lookup_conns->tcp_state == CLOSE_WAIT) {
-              lookup_conns->tcp_state = SYN_SENT;
-            }
-            pthread_mutex_lock(&((sr->nat)->lock));
-            tcp_packet->src_port = lookup_int->aux_ext;
-            ip_packet->ip_src = lookup_int->ip_ext;
-            tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-            ip_packet->ip_sum = 0;
-            ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-            iface = sr_get_interface(sr, ETH2);
-            /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
-            sr_handle_ip(sr, packet, len, iface->name);
-            free(lookup_int);
-          } else {
-            printf("SYN FLAG SENT OUT\n");
-            fflush();
-            pthread_mutex_lock(&((sr->nat)->lock));
-            struct sr_nat_mapping *int_mapping = sr_nat_insert_mapping(sr->nat,
-                                                             ip_packet->ip_src,
-                                                             tcp_packet->src_port,
-                                                             nat_mapping_tcp);
-
-            sr_nat_insert_connection(int_mapping, ip_packet->ip_dst,
-                                     tcp_packet->dst_port);
-            pthread_mutex_unlock(&((sr->nat)->lock));
-            lookup_int = sr_nat_lookup_internal(sr->nat,
-                                                ip_packet->ip_src,
-                                                tcp_packet->src_port,
-                                                nat_mapping_tcp);
-            tcp_packet->src_port = lookup_int->aux_ext;
-            ip_packet->ip_src = lookup_int->ip_ext;
-            tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-            ip_packet->ip_sum = 0;
-            ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-            iface = sr_get_interface(sr, ETH2);
-            /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
-            sr_handle_ip(sr, packet, len, iface->name);
-          }
-        } else if ((ntohs(tcp_packet->flags) & 0x1) {
-          pthread_mutex_lock(&((sr->nat)->lock));
-          struct sr_nat_mapping *int_mapping = sr_nat_internal_mapping(sr->nat,
-                                                                ip_packet->ip_src,
-                                                                tcp_packet->src_port,
-                                                                nat_mapping_tcp);
-          struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(int_mapping,
-                                                                ip_packet->ip_dst,
-                                                                tcp_packet->dst_port);
-          if (lookup_conns) {
-            lookup_conns->tcp_state = CLOSE_WAIT;
-          }
-          pthread_mutex_unlock(&((sr->nat)->lock));
-          tcp_packet->src_port = lookup_int->aux_ext;
-          ip_packet->ip_src = lookup_int->ip_ext;
-          tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-          ip_packet->ip_sum = 0;
-          ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-          iface = sr_get_interface(sr, ETH2);
-          /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
-          sr_handle_ip(sr, packet, len, iface->name);
-        }
-        /*
-=======
-        if (valid_tcp_packet(ip_packet, len)) {
-          sr_handle_ip(sr, packet, len, ETH1);
-        }
-      }
-    } else if (sr_get_interface(sr, ETH1)->ip == sr_get_interface(sr, interface)->ip) {
-      /* The packet is going out
-
-      if (ip_packet->ip_p == ip_protocol_icmp) {
-        /* if not matching is found for the destination then drop the packet and send back dest unreachable
-        if (get_next_hop(sr,ip_packet->ip_dst) == NULL){
-          icmp_type3_type11(sr, ip_packet, 3, 0, ETH1);
-        }else{
-          sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
-          icmp_packet->icmp_sum = 0;
-          struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat,
-                                                                ip_packet->ip_src,
-                                                                icmp_packet->icmp_id,
-                                                                nat_mapping_icmp);
-          if (!lookup_int) {
-            lookup_int = sr_nat_insert_mapping(sr->nat, ip_packet->ip_src,
-                                              icmp_packet->icmp_id,
-                                              nat_mapping_icmp);
-          }
-          icmp_packet->icmp_id = lookup_int->aux_ext;
-          icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
-          ip_packet->ip_src = lookup_int->ip_ext;
-          lookup_int->last_updated = time(NULL);
-          ip_packet->ip_sum = 0;
-          ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-          sr_handle_ip(sr, packet, len, ETH1);
-        }
->>>>>>> 930ddd75cbbb745aefbfd212a062d18735bec208*/
+/*
       }
     }else{
       printf("The packet is coming from an external interface.\n");
-      fflush();
+      fflush(stdout);
       if (sr_get_interface(sr, ETH2)->ip == sr_get_interface(sr, interface)->ip) {
-        if (ip_packet->ip_p == ip_protocol_icmp) {/*
-<<<<<<< HEAD
+        if (ip_packet->ip_p == ip_protocol_icmp) {
+
           sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
           icmp_packet->icmp_sum = 0;
           struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat,
@@ -604,10 +452,10 @@ void nat_handle_ip(struct sr_instance* sr,
           ip_packet->ip_sum = 0;
           ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
           struct sr_if *iface = sr_get_interface(sr, ETH2);
-          /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?
+          //SHOULD WE UPDATE THE ETHERNET PACKET HERE?
           sr_handle_ip(sr, packet, len, iface->name);
           }
-=======*/
+*/
           /* if not matching is found for the destination then drop the packet and send back dest unreachable */
           if (get_next_hop(sr,ip_packet->ip_dst) == NULL){
             icmp_type3_type11(sr, ip_packet, 3, 0, ETH2);
@@ -647,7 +495,7 @@ void nat_handle_ip(struct sr_instance* sr,
       }
 
     }
-  }
+  /*}*/
 }
 
 int valid_tcp_packet(sr_ip_hdr_t *packet, unsigned int len) {

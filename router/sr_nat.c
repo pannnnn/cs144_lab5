@@ -140,7 +140,7 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
 void sr_nat_insert_connection(struct sr_nat_mapping *mapping,
   uint32_t ip_dst, uint16_t dst_port) {
     struct sr_nat_connection *conn = malloc(sizeof(struct sr_nat_connection));
-    conn->connection_state = SYN_SENT;
+    conn->tcp_state = SYN_SENT;
     conn->ip_dst = ip_dst;
     conn->dst_port = dst_port;
     conn->last_updated = time(NULL);
@@ -150,7 +150,7 @@ void sr_nat_insert_connection(struct sr_nat_mapping *mapping,
     return;
 }
 
-struct sr_nat_connection sr_nat_lookup_connection(struct sr_nat_mapping *mapping,
+struct sr_nat_connection *sr_nat_lookup_connection(struct sr_nat_mapping *mapping,
   uint32_t ip_dst, uint16_t dst_port) {
       struct sr_nat_connection *curr = mapping->conns;
       while (curr) {
@@ -162,34 +162,34 @@ struct sr_nat_connection sr_nat_lookup_connection(struct sr_nat_mapping *mapping
       return NULL;
   }
 
-  struct sr_nat_mapping *sr_nat_internal_mapping(struct sr_nat *nat,
-    uint32_t ip_int, uint16_t aux_int, sr_nat_mapping_type type ) {
+struct sr_nat_mapping *sr_nat_internal_mapping(struct sr_nat *nat,
+  uint32_t ip_int, uint16_t aux_int, sr_nat_mapping_type type) {
 
-    struct sr_nat_mapping *curr = nat->mappings;
+  struct sr_nat_mapping *curr = nat->mappings;
 
-    while (curr) {
-      if (curr->type == type && curr->ip_int == ip_int &&
-          curr->aux_int == aux_int) {
-        curr->last_updated = time(NULL);
-        return curr;
-      }
-      curr = curr->next;
+  while (curr) {
+    if (curr->type == type && curr->ip_int == ip_int &&
+        curr->aux_int == aux_int) {
+      curr->last_updated = time(NULL);
+      return curr;
     }
-    return NULL;
+    curr = curr->next;
+  }
+  return NULL;
+}
+
+struct sr_nat_mapping *sr_nat_external_mapping(struct sr_nat *nat,
+    uint16_t aux_ext, sr_nat_mapping_type type) {
+
+  struct sr_nat_mapping *curr = nat->mappings;
+
+  while (curr) {
+    if (curr->type == type && curr->aux_ext == aux_ext) {
+      curr->last_updated = time(NULL);
+      return curr;
+    }
+    curr = curr->next;
   }
 
-  struct sr_nat_mapping *sr_nat_external_mapping(struct sr_nat *nat,
-      uint16_t aux_ext, sr_nat_mapping_type type ) {
-
-    struct sr_nat_mapping *curr = nat->mappings;
-
-    while (curr) {
-      if (curr->type == type && curr->aux_ext == aux_ext) {
-        curr->last_updated = time(NULL);
-        return curr;
-      }
-      curr = curr->next;
-    }
-
-    return NULL;
-  }
+  return NULL;
+}
