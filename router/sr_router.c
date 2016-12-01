@@ -506,7 +506,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 print_addr_ip_int(lookup_int->ip_ext);
                 tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 ip_packet->ip_sum = 0;
-                ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+                ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 iface = sr_get_interface(sr, ETH1);
                 printf("handleing the packet\n");
                 sr_handle_ip(sr, packet, len, iface->name);
@@ -532,7 +532,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 print_addr_ip_int(lookup_int->ip_ext);
                 tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 ip_packet->ip_sum = 0;
-                ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+                ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 print_hdr_ip(ip_packet);
                 iface = sr_get_interface(sr, ETH1);
                 /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
@@ -555,7 +555,7 @@ void nat_handle_ip(struct sr_instance* sr,
             ip_packet->ip_src = lookup_int->ip_ext;
             tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
             ip_packet->ip_sum = 0;
-            ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+            ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
             iface = sr_get_interface(sr, ETH1);
             /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
 
