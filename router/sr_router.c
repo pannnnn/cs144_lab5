@@ -262,7 +262,10 @@ void sr_handle_ip(struct sr_instance* sr,
                                len, next_hop->interface);
         }
         return;
-      /*
+      /*ived_packet,
+                                 len - sizeof(sr_ethernet_hdr_t) +
+                                  ip_packet->ip_hl * 4);
+          /* To see if a packet is still valid by looking at
         Sent if there is a non-existent route to the destination IP
       */
       } else {
@@ -453,14 +456,13 @@ void nat_handle_ip(struct sr_instance* sr,
         ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
         struct sr_if *iface = sr_get_interface(sr, ETH1);
         sr_handle_ip(sr, packet, len, iface->name);
-        free(lookup_int);
       }
     }else{
       if (sr_get_interface(sr, ETH2)->ip == sr_get_interface(sr, interface)->ip) {
         if (ip_packet->ip_p == ip_protocol_icmp) {
-        sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
-        icmp_packet->icmp_sum = 0;
-        struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat, 
+          sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
+          icmp_packet->icmp_sum = 0;
+          struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat, 
                                                               icmp_packet->icmp_id, 
                                                               nat_mapping_icmp);
         if (!lookup_ext) {
@@ -474,7 +476,6 @@ void nat_handle_ip(struct sr_instance* sr,
         ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
         struct sr_if *iface = sr_get_interface(sr, ETH2);
         sr_handle_ip(sr, packet, len, iface->name);
-        free(lookup_ext);
         }
       }
     }
