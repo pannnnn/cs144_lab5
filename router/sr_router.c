@@ -147,8 +147,9 @@ void sr_handle_ip(struct sr_instance* sr,
   /* check if it's in one of the sr's interfaces */
   if (valid_ip_packet(ip_packet, len - sizeof(sr_ethernet_hdr_t))) {
     struct sr_if* iface = in_if_list(sr, (uint32_t) ip_packet->ip_dst);
+    printf("asd\n");
     if(iface){
-
+      printf("123\n");
       /* it contains icmp protocal */
       if(ip_packet->ip_p == ip_protocol_icmp) {
           sr_icmp_hdr_t* received_packet = (sr_icmp_hdr_t*)
@@ -276,6 +277,7 @@ void sr_handle_ip(struct sr_instance* sr,
       }
     }
   }
+  printf("sadasd\n");
   return;
 }
 
