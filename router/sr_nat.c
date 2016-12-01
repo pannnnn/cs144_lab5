@@ -67,6 +67,17 @@ struct sr_nat_mapping *sr_nat_lookup_external(struct sr_nat *nat,
 
   /* handle lookup here, malloc and assign to copy */
   struct sr_nat_mapping *copy = NULL;
+  struct sr_nat_mapping *curr = nat->mappings;
+
+  while (curr) {
+    if (curr->type == type && curr->aux_ext == aux_ext) {
+      copy = malloc(sizeof(struct sr_nat_mapping));
+      memcpy(copy, curr, sizeof(struct sr_nat_mapping));
+      pthread_mutex_unlock(&(nat->lock));
+      return copy;
+    }
+    curr = curr->next;
+  }
 
   pthread_mutex_unlock(&(nat->lock));
   return copy;
