@@ -464,6 +464,7 @@ void nat_handle_ip(struct sr_instance* sr,
           ip_packet->ip_sum = 0;
           ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
           sr_handle_ip(sr, packet, len, ETH1);
+          free(lookup_int);
         }
       } else if (ip_packet->ip_p == ip_protocol_tcp) {
           printf("Handling internal to external TCP\n");
@@ -586,6 +587,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 sr_handle_ip(sr, packet, len, ETH2);
+                free(lookup_ext);
               }
             }else{
               struct sr_rt* next_hop = get_next_hop(sr,ip_packet->ip_dst);
@@ -595,6 +597,9 @@ void nat_handle_ip(struct sr_instance* sr,
               }else{
                 /* imcp, tcp, or other packets sent to somewhere else*/
                 sr_handle_ip(sr, packet, len, ETH2);
+              }
+              if (lookup_ext) {
+                free(lookup_ext);
               }
             }
         }
