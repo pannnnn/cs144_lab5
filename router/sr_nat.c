@@ -75,6 +75,11 @@ struct sr_nat_mapping *sr_nat_lookup_external(struct sr_nat *nat,
       copy = malloc(sizeof(struct sr_nat_mapping));
       memcpy(copy, curr, sizeof(struct sr_nat_mapping));
       pthread_mutex_unlock(&(nat->lock));
+      printf("From outside Printing mapping\n");
+      printf("From outside %d\n",curr->ip_int);
+      printf("From outside %d\n",curr->ip_ext);
+      printf("From outside %d\n",curr->aux_int);
+      printf("From outside %d\n",curr->aux_ext);
       return copy;
     }
     curr = curr->next;
