@@ -464,34 +464,39 @@ void nat_handle_ip(struct sr_instance* sr,
     }else{
       if (sr_get_interface(sr, ETH2)->ip == sr_get_interface(sr, interface)->ip) {
         if (ip_packet->ip_p == ip_protocol_icmp) {
-          sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
-          icmp_packet->icmp_sum = 0;
-          struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat, 
-                                                              icmp_packet->icmp_id, 
-                                                              nat_mapping_icmp);
-          if(iface){
-            if (!lookup_ext) {
-              /* handle imcp or tcp targeted to one of the interfaces from server1 or server2*/
-              sr_handle_ip(sr, packet, len, ETH2);
-            }else{
-              /* handle responding icmp from server*/
-              icmp_packet->icmp_id = lookup_ext->aux_int;
-              icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
-              ip_packet->ip_dst = lookup_ext->ip_int;
-              lookup_ext->last_updated = time(NULL);
-              ip_packet->ip_sum = 0;
-              ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-              sr_handle_ip(sr, packet, len, ETH2);
-            }
+          /* if not matching is found for the destination then drop the packet and send back dest unreachable */
+          if (get_next_hop(sr,ip_packet->ip_dst) == NULL){
+            icmp_type3_type11(sr, ip_packet, 3, 0, ETH1);
           }else{
-            struct sr_rt* next_hop = get_next_hop(sr,ip_packet->ip_dst);
-            if(!next_hop){
-              if(sr_get_interface(sr, next_hop->interface)->ip == sr_get_interface(sr, ETH2)->ip){
-                /* imcp, tcp, or other packets sent between external servers */
+            sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
+            icmp_packet->icmp_sum = 0;
+            struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat, 
+                                                                icmp_packet->icmp_id, 
+                                                                nat_mapping_icmp);
+            if(iface){
+              if (!lookup_ext) {
+                /* handle imcp or tcp targeted to one of the interfaces from server1 or server2*/
+                sr_handle_ip(sr, packet, len, ETH2);
+              }else{
+                /* handle responding icmp from server*/
+                icmp_packet->icmp_id = lookup_ext->aux_int;
+                icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
+                ip_packet->ip_dst = lookup_ext->ip_int;
+                lookup_ext->last_updated = time(NULL);
+                ip_packet->ip_sum = 0;
+                ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 sr_handle_ip(sr, packet, len, ETH2);
               }
+            }else{
+              struct sr_rt* next_hop = get_next_hop(sr,ip_packet->ip_dst);
+              if(!next_hop){
+                if(sr_get_interface(sr, next_hop->interface)->ip == sr_get_interface(sr, ETH2)->ip){
+                  /* imcp, tcp, or other packets sent between external servers */
+                  sr_handle_ip(sr, packet, len, ETH2);
+                }
+              }
+              /* server trying to ping client, we need to drop the packet */
             }
-            /* server trying to ping client, we need to drop the packet */
           }
         }
       }
