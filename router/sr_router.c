@@ -540,34 +540,34 @@ void nat_handle_ip(struct sr_instance* sr,
             /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
             sr_handle_ip(sr, packet, len, iface->name);
           }
-        }
-      } else {
-        printf("The packet is coming from an external interface.\n");
-        fflush(stdout);
-        if (sr_get_interface(sr, ETH2)->ip == sr_get_interface(sr, interface)->ip) {
-          if (ip_packet->ip_p == ip_protocol_icmp) {
-            sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
-            icmp_packet->icmp_sum = 0;
-            struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat,
-                                                                icmp_packet->icmp_id,
-                                                                nat_mapping_icmp);
-            if (!lookup_ext) {
-              return;
-            }
-            icmp_packet->icmp_id = lookup_ext->aux_int;
-            icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
-            ip_packet->ip_dst = lookup_ext->ip_int;
-            lookup_ext->last_updated = time(NULL);
-            ip_packet->ip_sum = 0;
-            ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
-            struct sr_if *iface = sr_get_interface(sr, ETH2);
-            /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
-            sr_handle_ip(sr, packet, len, iface->name);
+      }
+    } else {
+      printf("The packet is coming from an external interface.\n");
+      fflush(stdout);
+      if (sr_get_interface(sr, ETH2)->ip == sr_get_interface(sr, interface)->ip) {
+        if (ip_packet->ip_p == ip_protocol_icmp) {
+          sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
+          icmp_packet->icmp_sum = 0;
+          struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat,
+                                                              icmp_packet->icmp_id,
+                                                              nat_mapping_icmp);
+          if (!lookup_ext) {
+            return;
           }
+          icmp_packet->icmp_id = lookup_ext->aux_int;
+          icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
+          ip_packet->ip_dst = lookup_ext->ip_int;
+          lookup_ext->last_updated = time(NULL);
+          ip_packet->ip_sum = 0;
+          ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+          struct sr_if *iface = sr_get_interface(sr, ETH2);
+          /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
+          sr_handle_ip(sr, packet, len, iface->name);
         }
       }
     }
-  } 
+  }
+} 
 
 
 
