@@ -452,6 +452,7 @@ void nat_handle_ip(struct sr_instance* sr,
                                                                 icmp_packet->icmp_id, 
                                                                 nat_mapping_icmp);
           if (!lookup_int) {
+            printf("Im inserting \n");
             lookup_int = sr_nat_insert_mapping(sr->nat, ip_packet->ip_src,
                                               icmp_packet->icmp_id,
                                               nat_mapping_icmp);
@@ -573,7 +574,7 @@ void nat_handle_ip(struct sr_instance* sr,
             if(iface){
               if (!lookup_ext) {
                 /* handle imcp or tcp targeted to one of the interfaces from server1 or server2*/
-                printf("No mappping found");
+                printf("No mappping found\n");
                 sr_handle_ip(sr, packet, len, ETH2);
               }else{
                 /* handle icmp reply from server*/
