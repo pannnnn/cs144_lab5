@@ -214,6 +214,7 @@ void sr_handle_ip(struct sr_instance* sr,
       } else {
         /* it contains protocals other than icmp and has type3 or type11 */
         struct sr_rt* next_hop = get_next_hop(sr, ip_packet->ip_src);
+        printf("I was here\n");
         icmp_type3_type11(sr, ip_packet, 3, 3, next_hop->interface);
       }
     } else {
