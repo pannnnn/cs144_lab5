@@ -492,6 +492,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 pthread_mutex_lock(&((sr->nat)->lock));
                 tcp_packet->src_port = lookup_int->aux_ext;
                 ip_packet->ip_src = lookup_int->ip_ext;
+                print_addr_ip_int(lookup_int->ip_ext);
                 tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
@@ -516,9 +517,11 @@ void nat_handle_ip(struct sr_instance* sr,
                                                     nat_mapping_tcp);
                 tcp_packet->src_port = lookup_int->aux_ext;
                 ip_packet->ip_src = lookup_int->ip_ext;
+                print_addr_ip_int(lookup_int->ip_ext);
                 tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+                print_hdr_ip(ip_packet);
                 iface = sr_get_interface(sr, ETH2);
                 /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
                 sr_handle_ip(sr, packet, len, iface->name);
