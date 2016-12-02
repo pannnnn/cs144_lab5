@@ -720,24 +720,26 @@ int valid_tcp_packet(sr_ip_hdr_t *packet, unsigned int len) {
 void tcp_checksum(uint8_t* packet, unsigned int len, struct sr_instance* sr){
   int length = len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
   sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
-  sr_tcp_hdr_t* tcp_hdr  = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+  /* sr_tcp_hdr_t* tcp_hdr  = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));*/
   printf("LEGNTHTHTHTHTHTHTH %d     %d\n", length, len);
   fflush(stdout);
   sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t) +
                                                length);
                                             
-  printf("Before MMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
-  fflush(stdout);
-  memcpy(tcp_pseudo_hdr + sizeof(sr_tcp_pseudo_hdr_t), tcp_hdr, length);
-  printf("After MMMMMMMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
-  fflush(stdout);
+  
   tcp_pseudo_hdr->src_ip = ip_hdr->ip_src;
   tcp_pseudo_hdr->dst_ip = ip_hdr->ip_dst;
   tcp_pseudo_hdr->reserved = 0;
   tcp_pseudo_hdr->protocol = ip_protocol_tcp;
   tcp_pseudo_hdr->length = htons(length);
-  tcp_hdr->checksum = 0;
-  tcp_hdr->checksum  = cksum(tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t) + length);
+
+  printf("Before MMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
+  fflush(stdout);
+  memcpy(tcp_pseudo_hdr + sizeof(sr_tcp_pseudo_hdr_t), (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)), length);
+  printf("After MMMMMMMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
+  fflush(stdout);
+  ((sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)))->checksum = 0;
+  ((sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)))->checksum  = cksum(tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t) + length);
   free(tcp_pseudo_hdr);
 }
 
