@@ -630,7 +630,7 @@ void nat_handle_ip(struct sr_instance* sr,
           fflush(stdout);
           sr_tcp_hdr_t* tcp_packet = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
           struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat,
-                                                                tcp_packet->src_port,
+                                                                tcp_packet->dst_port,
                                                                 nat_mapping_tcp);
           if (!lookup_ext && ((!((ntohs(tcp_packet->flags) & 0x10)) >> 4) || !((ntohs(tcp_packet->flags) & 0x2) >> 1))) {
             printf("It's a syn ack from outside. \n");
