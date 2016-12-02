@@ -52,6 +52,26 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
     time_t curtime = time(NULL);
 
     /* handle periodic tasks here */
+    struct sr_nat_mapping* curr = nat->mappings;
+    struct sr_nat_mapping* next = NULL;
+    while (curr){
+        if (curr->type == nat_mapping_icmp){
+          if (difftime(curtime,curr->last_updated) > nat->icmp_query){
+            next = curr->next;
+            free(curr);
+            curr = next;
+          }else{
+            curr = curr->next;
+          }
+        }else if (curr->type == nat_mapping_tcp){
+          if (difftime(curtime,curr->last_updated) > nat->tcp_established_idle){
+            
+        }
+    }
+
+
+    int tcp_established_idle;
+    int tcp_transitory_idle;
 
     pthread_mutex_unlock(&(nat->lock));
   }
@@ -218,4 +238,42 @@ struct sr_nat_mapping *sr_nat_external_mapping(struct sr_nat *nat,
   }
 
   return NULL;
+}
+
+/* Frees all memory associated with this arp request entry. If this arp request
+   entry is on the arp request queue, it is removed from the queue. */
+void nat_mapping_destroy(struct sr_nat *nat, struct sr_nat_mapping *entry) {
+    pthread_mutex_lock(&(cache->lock));
+    
+    if (entry) {
+        struct sr_nat_mapping *mapping, *prev = NULL, *next = NULL; 
+        for (mapping = nat->mappings; mapping != NULL; mapping = mapping->next) {
+            if (mapping == entry) {                
+                if (prev) {
+                    next = mapping->next;
+                    prev->next = next;
+                } 
+                else {
+                    next = mapping->next;
+                    nat->mappings = next;
+                }
+                
+                break;
+            }
+            prev = mapping;
+        }
+        
+        struct sr_nat_connection *conn, *nxt;
+        
+        for (conn = entry->conns; conn; conn = nxt) {
+            nxt = conn->next;
+            if (conn->syn_received)
+                free(conn->syn_received);
+            free(conn);
+        }
+        
+        free(entry);
+    }
+    
+    pthread_mutex_unlock(&(cache->lock));
 }
