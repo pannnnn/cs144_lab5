@@ -114,6 +114,7 @@ struct sr_nat_mapping *sr_nat_lookup_internal(struct sr_nat *nat,
       printf("%d\n",curr->aux_ext);
       return copy;
     }
+    printf("COPY:::%d\n", copy);
     curr = curr->next;
   }
   pthread_mutex_unlock(&(nat->lock));
