@@ -666,6 +666,8 @@ void nat_handle_ip(struct sr_instance* sr,
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 printf("handleing the packet\n");
+                printf("Before handling ip  printing eth %s\n", sr_get_interface(sr,ETH2)->name);
+                fflush(stdout);
                 sr_handle_ip(sr, packet, len, ETH2);
                 printf("after handle ip\n");
                 fflush(stdout);
