@@ -380,8 +380,8 @@ int valid_ip_packet(sr_ip_hdr_t* packet, unsigned int len) {
   uint16_t checksum = cksum(packet, packet->ip_hl*4);
 
   /* Invalid checksum */
-  /*if (checksum != packet_ip_sum)
-      return 0;*/
+  if (checksum != packet_ip_sum)
+      return 0;
 
   packet->ip_sum = packet_ip_sum;
   return 1;
@@ -604,12 +604,12 @@ void nat_handle_ip(struct sr_instance* sr,
               }else{
                 /* handle icmp reply from server*/
                 icmp_packet->icmp_id = lookup_ext->aux_int;
-                icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
+                icmp_packet->icmp_sum = cksum(icmp_packet, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);
                 ip_packet->ip_src = sr_get_interface(sr, ETH1)->ip;
                 ip_packet->ip_dst = lookup_ext->ip_int;
                 lookup_ext->last_updated = time(NULL);
                 ip_packet->ip_sum = 0;
-                icmp_packet->icmp_sum = cksum(icmp_packet, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);
+                ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 sr_handle_ip(sr, packet, len, ETH2);
                 free(lookup_ext);
               }
