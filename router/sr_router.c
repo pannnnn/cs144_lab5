@@ -725,7 +725,8 @@ void tcp_checksum(uint8_t* packet, unsigned int len, struct sr_instance* sr){
   fflush(stdout);
   sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t) +
                                                length);
-                                            
+  printf("TCP PSEUDO HEADERRRRRRRRRRRRRRRRR %d \n", tcp_pseudo_hdr);
+  fflush(stdout);                                          
   
   tcp_pseudo_hdr->src_ip = ip_hdr->ip_src;
   tcp_pseudo_hdr->dst_ip = ip_hdr->ip_dst;
