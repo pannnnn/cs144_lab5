@@ -640,49 +640,69 @@ void nat_handle_ip(struct sr_instance* sr,
           struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat,
                                                                 tcp_packet->dst_port,
                                                                 nat_mapping_tcp);
-          if (!lookup_ext && ((!((ntohs(tcp_packet->flags) & 0x10)) >> 4) || !((ntohs(tcp_packet->flags) & 0x2) >> 1))) {
-            printf("It's a syn ack from outside. \n");
-            fflush(stdout);
-            return;
+          if ((ntohs(tcp_packet->flags) & 0x2) >> 1) {
+            if (lookup_ext) {
+              pthread_mutex_lock(&((sr->nat)->lock));
+              struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
+                                                                    tcp_packet->dst_port,
+                                                                    nat_mapping_tcp);
+              struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(ext_mapping,
+                                                                    ip_packet->ip_src,
+                                                                    tcp_packet->src_port);
 
-          } else if ((ntohs(tcp_packet->flags) & 0x10) >> 4) {
-             if (lookup_ext) {
-                printf("Before print addr  printing eth %s\n", sr_get_interface(sr,ETH2)->name);
-                fflush(stdout);
-                printf("there is a mapping\n");
-                /*pthread_mutex_lock(&((sr->nat)->lock));
-                struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(lookup_ext,
-                                                                      ip_packet->ip_src,
+              if (!lookup_conns) {
+                sr_nat_insert_connection(ext_mapping, ip_packet->ip_src, tcp_packet->src_port);
+                lookup_conns = sr_nat_lookup_connection(ext_mapping, ip_packet->ip_src,
                                                                       tcp_packet->src_port);
-
-                if (!lookup_conns) {
-                  return ;
-                } else if (lookup_conns->tcp_state == SYN_SENT) {
-                  lookup_conns->tcp_state = ESTABLISHED;
+                if (tcp_packet->dst_port != 22) {
+                  lookup_conns->syn_received = malloc(len - sizeof(sr_ethernet_hdr_t));
+                  memcpy(lookup_conns->syn_received, ip_packet, len - sizeof(sr_ethernet_hdr_t));
+                  lookup_conns->tcp_state = SYN_RECEIVED;
                 }
-                pthread_mutex_unlock(&((sr->nat)->lock));*/
-                
-                tcp_packet->src_port = lookup_ext->aux_ext;
-                print_addr_ip_int(lookup_ext->ip_ext);
-                printf("Before tcp cksum %s\n", sr_get_interface(sr,ETH2)->name);
-                fflush(stdout);
-                /* tcp_checksum(packet, len, sr); */
-                printf("after cksum %s\n", sr_get_interface(sr,ETH2)->name);
-                fflush(stdout);
-                ip_packet->ip_dst = lookup_ext->ip_int;
-                lookup_ext->last_updated = time(NULL);
-                printf("Before ip cksum %s\n", sr_get_interface(sr,ETH2)->name);
-                fflush(stdout);
-                ip_packet->ip_sum = 0;
-                ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
-                printf("handleing the packet\n");
-                printf("Before handling ip  printing eth %s\n", sr_get_interface(sr,ETH2)->name);
-                fflush(stdout);
-                sr_handle_ip(sr, packet, len, ETH2);
-                printf("after handle ip\n");
-                fflush(stdout);
-                /* free(lookup_ext); */
-             }
+                return;
+              } else if (lookup_conns->tcp_state == SYN_SENT) {
+                lookup_conns->tcp_state = ESTABLISHED;
+              }
+              pthread_mutex_unlock(&((sr->nat)->lock));
+              tcp_packet->dst_port = lookup_ext->aux_int;
+              ip_packet->ip_dst = lookup_ext->ip_int;
+              tcp_checksum(packet, len, sr);
+              ip_packet->ip_sum = 0;
+              ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
+              sr_handle_ip(sr, packet, len, ETH2);
+              free(lookup_ext);                                                 
+            }
+          } else if (!lookup_ext) {
+            return;
+          } else if (ntohs(tcp_packet->flags) & 0x1) {
+            pthread_mutex_lock(&((sr->nat)->lock));
+            struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
+                                                                    tcp_packet->dst_port,
+                                                                    nat_mapping_tcp);
+            struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(ext_mapping,
+                                                                  ip_packet->ip_src,
+                                                                  tcp_packet->src_port);
+            if (lookup_conns) {
+              lookup_conns->tcp_state = CLOSE_WAIT;
+            }
+            pthread_mutex_unlock(&((sr->nat)->lock));
+            tcp_packet->dst_port = lookup_ext->aux_int;
+            ip_packet->ip_dst = lookup_ext->ip_int;
+            tcp_checksum(packet, len, sr);
+            ip_packet->ip_sum = 0;
+            ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
+            sr_handle_ip(sr, packet, len, ETH2);
+            free(lookup_ext);                    
+          } else {
+            pthread_mutex_lock(&((sr->nat)->lock));
+            struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
+                                                                    tcp_packet->dst_port,
+                                                                    nat_mapping_tcp);
+            struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(ext_mapping,
+                                                                  ip_packet->ip_src,
+                                                                  tcp_packet->src_port);
+            pthread_mutex_unlock(&((sr->nat)->lock));
+            free(lookup_ext);
           }
         }
       }
