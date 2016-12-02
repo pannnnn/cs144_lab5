@@ -380,8 +380,8 @@ int valid_ip_packet(sr_ip_hdr_t* packet, unsigned int len) {
   uint16_t checksum = cksum(packet, packet->ip_hl*4);
 
   /* Invalid checksum */
-  if (checksum != packet_ip_sum)
-      return 0;
+  /*if (checksum != packet_ip_sum)
+      return 0;*/
 
   packet->ip_sum = packet_ip_sum;
   return 1;
