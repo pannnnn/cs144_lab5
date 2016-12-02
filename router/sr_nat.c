@@ -158,6 +158,8 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   nat->mappings = mapping;
   memcpy(copy, mapping, sizeof(struct sr_nat_mapping));
   pthread_mutex_unlock(&(nat->lock));
+  printf("after insert mappings id:%d\n",nat->mappings->aux_int);
+  fflush(stdout);
   return copy;
 }
 
