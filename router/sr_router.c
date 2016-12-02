@@ -221,62 +221,75 @@ void sr_handle_ip(struct sr_instance* sr,
     } else {
       /* Try to find the outgoing interface at the router for that specific
       ip packet */
-      struct sr_rt* next_hop = get_next_hop(sr, ip_packet->ip_dst);
-      if (next_hop) {
-        printf("Sending some kind of a packet\n");
-        /*
-          Send back a type 11 icmp packet through found interface if ttl
-          becomes 0 when a packet arrive in the router
+      
+        struct sr_rt* next_hop = get_next_hop(sr, ip_packet->ip_dst);
+        if (next_hop) {
+          printf("Sending some kind of a packet\n");
+          /*
+            Send back a type 11 icmp packet through found interface if ttl
+            becomes 0 when a packet arrive in the router
+            */
+          if (ip_packet->ip_ttl == 1) {
+            struct sr_rt* return_route = get_next_hop(sr, ip_packet->ip_src);
+            icmp_type3_type11(sr, ip_packet, 11, 0, return_route->interface);
+            return;
+          }
+          /* Set up ethernet header and ip header accordingly */
+          struct sr_if* new_iface;
+          if(!sr->nat){
+            new_iface = sr_get_interface(sr, next_hop->interface);
+          }else{
+            if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH1)->ip){
+              new_iface = sr_get_interface(sr,ETH2);
+            }else if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH2)->ip){
+              new_iface = sr_get_interface(sr,ETH1);
+            }else{
+              printf("Get echo reply from strange interface\n");
+              new_iface = sr_get_interface(sr, next_hop->interface);
+            }
+          }
+          ip_packet->ip_ttl--;
+          ip_packet->ip_sum = 0;
+
+          uint8_t* new_ether = malloc(len);
+          sr_ethernet_hdr_t* new_ether_hdr = (sr_ethernet_hdr_t*) new_ether;
+          sr_ip_hdr_t* new_ip = (sr_ip_hdr_t*) (new_ether +
+                                                sizeof(sr_ethernet_hdr_t));
+
+          memcpy(new_ip, ip_packet, len - sizeof(sr_ethernet_hdr_t));
+          new_ip->ip_sum = cksum(new_ip, new_ip->ip_hl*4);
+          memcpy(new_ether_hdr->ether_shost, new_iface->addr, 6);
+
+          new_ether_hdr->ether_type = htons(ethertype_ip);
+
+          /*
+            Check if a entry for exsits for a specific ip address, if it is,
+            send the packet directly, else queue the packet and a
+            associated request waited to be sent every second.
           */
-        if (ip_packet->ip_ttl == 1) {
-          struct sr_rt* return_route = get_next_hop(sr, ip_packet->ip_src);
-          icmp_type3_type11(sr, ip_packet, 11, 0, return_route->interface);
+          struct sr_arpentry* entry = sr_arpcache_lookup(&(sr->cache),
+                                                        new_ip->ip_dst);
+          if (entry) {
+            memcpy(new_ether_hdr->ether_dhost, entry->mac, 6);
+            sr_send_packet(sr, new_ether, len, next_hop->interface);
+            /*free(entry);*/
+          } else {
+            sr_arpcache_queuereq(&(sr->cache), ip_packet->ip_dst, new_ether,
+                                len, next_hop->interface);
+          }
           return;
-        }
-        /* Set up ethernet header and ip header accordingly */
-        struct sr_if* new_iface = sr_get_interface(sr, next_hop->interface);
-        ip_packet->ip_ttl--;
-        ip_packet->ip_sum = 0;
-
-        uint8_t* new_ether = malloc(len);
-        sr_ethernet_hdr_t* new_ether_hdr = (sr_ethernet_hdr_t*) new_ether;
-        sr_ip_hdr_t* new_ip = (sr_ip_hdr_t*) (new_ether +
-                                              sizeof(sr_ethernet_hdr_t));
-
-        memcpy(new_ip, ip_packet, len - sizeof(sr_ethernet_hdr_t));
-        new_ip->ip_sum = cksum(new_ip, new_ip->ip_hl*4);
-        memcpy(new_ether_hdr->ether_shost, new_iface->addr, 6);
-
-        new_ether_hdr->ether_type = htons(ethertype_ip);
-
-        /*
-          Check if a entry for exsits for a specific ip address, if it is,
-          send the packet directly, else queue the packet and a
-          associated request waited to be sent every second.
+        /*ived_packet,
+                                  len - sizeof(sr_ethernet_hdr_t) +
+                                    ip_packet->ip_hl * 4);
+            /* To see if a packet is still valid by looking at
+          Sent if there is a non-existent route to the destination IP
         */
-        struct sr_arpentry* entry = sr_arpcache_lookup(&(sr->cache),
-                                                       new_ip->ip_dst);
-        if (entry) {
-          memcpy(new_ether_hdr->ether_dhost, entry->mac, 6);
-          sr_send_packet(sr, new_ether, len, next_hop->interface);
-          /*free(entry);*/
         } else {
-          sr_arpcache_queuereq(&(sr->cache), ip_packet->ip_dst, new_ether,
-                               len, next_hop->interface);
+          struct sr_rt* return_route = get_next_hop(sr, ip_packet->ip_src);
+          icmp_type3_type11(sr, ip_packet, 3, 0, return_route->interface);
         }
-        return;
-      /*ived_packet,
-                                 len - sizeof(sr_ethernet_hdr_t) +
-                                  ip_packet->ip_hl * 4);
-          /* To see if a packet is still valid by looking at
-        Sent if there is a non-existent route to the destination IP
-      */
-      } else {
-        struct sr_rt* return_route = get_next_hop(sr, ip_packet->ip_src);
-        icmp_type3_type11(sr, ip_packet, 3, 0, return_route->interface);
       }
     }
-  }
   printf("sadasd\n");
   return;
 }
@@ -509,7 +522,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 } else if (lookup_conns->tcp_state == CLOSE_WAIT) {
                   lookup_conns->tcp_state = SYN_SENT;
                 }
-                pthread_mutex_lock(&((sr->nat)->lock));
+                pthread_mutex_unlock(&((sr->nat)->lock));
                 tcp_packet->src_port = lookup_int->aux_ext;
                 ip_packet->ip_src = lookup_int->ip_ext;
                 print_addr_ip_int(lookup_int->ip_ext);
@@ -609,7 +622,45 @@ void nat_handle_ip(struct sr_instance* sr,
                 free(lookup_ext);
               }
             }
-        }
+        }/*else if (ip_packet->ip_p == ip_protocol_tcp) {
+          printf("Handling external to internals TCP\n");
+          fflush(stdout);
+          sr_tcp_hdr_t* tcp_packet = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+          struct sr_nat_mapping* lookup_int = sr_nat_lookup_external(sr->nat,
+                                                                tcp_packet->src_port,
+                                                                nat_mapping_tcp);
+          if (!lookup_int && (!((ntohs(tcp_packet->flags) & 0x10) >> 4) || !((ntohs(tcp_packet->flags) & 0x2) >> 1)) {
+            printf("It's a syn ack from outside. \n");
+          
+            return;
+
+          } else if ((ntohs(tcp_packet->flags) & 0x10) >> 4) {
+             if (lookup_ext) {
+                printf("there is a mapping\n");
+                pthread_mutex_lock(&((sr->nat)->lock));
+                struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(lookup_ext,
+                                                                      ip_packet->ip_src,
+                                                                      tcp_packet->src_port);
+
+                if (!lookup_conns) {
+                  return ;
+                } else if (lookup_conns->tcp_state == SYN_SENT) {
+                  lookup_conns->tcp_state = ESTABLISHED;
+                }
+                pthread_mutex_unlock(&((sr->nat)->lock));
+                tcp_packet->src_port = lookup_ext->aux_ext;
+                ip_packet->ip_src = lookup_ext->ip_ext;
+                print_addr_ip_int(lookup_ext->ip_ext);
+                tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+                ip_packet->ip_sum = 0;
+                ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
+                iface = sr_get_interface(sr, ETH1);
+                printf("handleing the packet\n");
+                sr_handle_ip(sr, packet, len, iface->name);
+                free(lookup_int);
+             }
+          }
+        }*/
       }
     }
   }
