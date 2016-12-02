@@ -136,6 +136,7 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   mapping->ip_int = ip_int;
   mapping->ip_ext = sr_get_interface(nat->sr, ETH2)->ip;
   mapping->aux_int = aux_int;
+  printf("IDIDID:%d\n",aux_int);
   if (nat->identifier_or_port > 35876) {
     nat->identifier_or_port = 1389;
   }
