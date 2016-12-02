@@ -654,6 +654,8 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_packet->src_port = lookup_ext->aux_ext;
                 print_addr_ip_int(lookup_ext->ip_ext);
                 tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+                ip_packet->ip_dst = lookup_ext->ip_int;
+                lookup_ext->last_updated = time(NULL);
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 printf("handleing the packet\n");
