@@ -129,8 +129,9 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
 
   pthread_mutex_lock(&(nat->lock));
   printf("before inserting");
+  printf("NAAAAAAAAAAT: %d\n", nat);
   fflush(stdout);
-  if(!nat->mappings){
+  if(!(nat->mappings)){
     printf("before insert mappings id:%d\n",nat->mappings->aux_int);
     fflush(stdout);
   }else{
