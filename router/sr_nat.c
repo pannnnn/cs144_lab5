@@ -52,7 +52,7 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
     time_t curtime = time(NULL);
 
     /* handle periodic tasks here */
-    struct sr_nat_mapping* curr = nat->mappings;
+   /* struct sr_nat_mapping* curr = nat->mappings;
     struct sr_nat_mapping* next = NULL;
     while (curr){
         if (curr->type == nat_mapping_icmp){
@@ -71,7 +71,7 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
 
 
     int tcp_established_idle;
-    int tcp_transitory_idle;
+    int tcp_transitory_idle;*/
 
     pthread_mutex_unlock(&(nat->lock));
   }
@@ -243,7 +243,7 @@ struct sr_nat_mapping *sr_nat_external_mapping(struct sr_nat *nat,
 /* Frees all memory associated with this arp request entry. If this arp request
    entry is on the arp request queue, it is removed from the queue. */
 void nat_mapping_destroy(struct sr_nat *nat, struct sr_nat_mapping *entry) {
-    pthread_mutex_lock(&(cache->lock));
+    pthread_mutex_lock(&(nat->lock));
     
     if (entry) {
         struct sr_nat_mapping *mapping, *prev = NULL, *next = NULL; 
@@ -275,5 +275,5 @@ void nat_mapping_destroy(struct sr_nat *nat, struct sr_nat_mapping *entry) {
         free(entry);
     }
     
-    pthread_mutex_unlock(&(cache->lock));
+    pthread_mutex_unlock(&(nat->lock));
 }

@@ -69,17 +69,18 @@ void sr_init(struct sr_instance* sr)
  *---------------------------------------------------------------------*/
 
 void sr_handlepacket(struct sr_instance* sr,
-        uint8_t * packet/* lent */,
+        uint8_t * received_packet/* lent */,
         unsigned int len,
         char* interface/* lent */)
 {
   /* REQUIRES */
   assert(sr);
-  assert(packet);
+  assert(received_packet);
   assert(interface);
 
   printf("*** -> Received packet of length %d \n",len);
-
+  uint8_t* packet = malloc(len);
+  memcpy(packet, received_packet, len);
   /* fill in code here */
   if (len < sizeof(sr_ethernet_hdr_t))
     return;
@@ -448,6 +449,7 @@ void nat_handle_ip(struct sr_instance* sr,
                    unsigned int len,
                    char* interface)
 {
+
   sr_ip_hdr_t* ip_packet = (sr_ip_hdr_t*)
                            (packet + sizeof(sr_ethernet_hdr_t));
   print_hdr_ip((uint8_t*) ip_packet);
@@ -539,7 +541,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_packet->src_port = lookup_int->aux_ext;
                 ip_packet->ip_src = lookup_int->ip_ext;
                 print_addr_ip_int(lookup_int->ip_ext);
-                /*tcp_checksum(packet, len, sr);*/
+                tcp_checksum(packet, len, sr);
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 printf("handleing the packet\n");
@@ -565,7 +567,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_packet->src_port = lookup_int->aux_ext;
                 ip_packet->ip_src = lookup_int->ip_ext;
                 print_addr_ip_int(lookup_int->ip_ext);
-                /*tcp_checksum(packet, len, sr);*/
+                tcp_checksum(packet, len, sr);
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 print_hdr_ip((uint8_t *) ip_packet);
@@ -587,7 +589,7 @@ void nat_handle_ip(struct sr_instance* sr,
             pthread_mutex_unlock(&((sr->nat)->lock));
             tcp_packet->src_port = lookup_int->aux_ext;
             ip_packet->ip_src = lookup_int->ip_ext;
-            /*tcp_checksum(packet, len, sr);*/
+            tcp_checksum(packet, len, sr);
             ip_packet->ip_sum = 0;
             ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
             /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
@@ -666,7 +668,7 @@ void nat_handle_ip(struct sr_instance* sr,
               pthread_mutex_unlock(&((sr->nat)->lock));
               tcp_packet->dst_port = lookup_ext->aux_int;
               ip_packet->ip_dst = lookup_ext->ip_int;
-              /*tcp_checksum(packet, len, sr);*/
+              tcp_checksum(packet, len, sr);
               ip_packet->ip_sum = 0;
               ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
               sr_handle_ip(sr, packet, len, ETH2);
@@ -687,7 +689,7 @@ void nat_handle_ip(struct sr_instance* sr,
               pthread_mutex_unlock(&((sr->nat)->lock));
               tcp_packet->dst_port = lookup_ext->aux_int;
               ip_packet->ip_dst = lookup_ext->ip_int;
-              /*tcp_checksum(packet, len, sr);*/
+              tcp_checksum(packet, len, sr);
               ip_packet->ip_sum = 0;
               ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
               print_hdr_ip(ip_packet);
@@ -711,7 +713,7 @@ void nat_handle_ip(struct sr_instance* sr,
             pthread_mutex_unlock(&((sr->nat)->lock));
             tcp_packet->dst_port = lookup_ext->aux_int;
             ip_packet->ip_dst = lookup_ext->ip_int;
-            /*tcp_checksum(packet, len, sr);*/
+            tcp_checksum(packet, len, sr);
             ip_packet->ip_sum = 0;
             ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
             sr_handle_ip(sr, packet, len, ETH2);
@@ -761,28 +763,33 @@ int valid_tcp_packet(sr_ip_hdr_t *packet, unsigned int len) {
 }
 
 void tcp_checksum(uint8_t* packet, unsigned int len, struct sr_instance* sr){
-  int length = len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
-  sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
-  sr_tcp_hdr_t* tcp_hdr  = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
-  printf("LEGNTHTHTHTHTHTHTH %d     %d\n", length, len);
-  fflush(stdout);
-  sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t) +
-                                               length);
-                                            
+
   
+  /*int length = len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
+  sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));*/
+  sr_tcp_hdr_t* tcp_hdr  = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+  sr_ip_hdr_t* ip_packet  = (sr_ip_hdr_t* ) (packet + sizeof(sr_ethernet_hdr_t));
+  /*printf("LEGNTHTHTHTHTHTHTH %d     %d\n", length, len);*/
+  fflush(stdout);
+  tcp_hdr->checksum = 0;
+  tcp_hdr->checksum = cksum(tcp_hdr, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);
+  /*sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t) +
+                                               length);*/
+                                            
+  /*
   tcp_pseudo_hdr->src_ip = ip_hdr->ip_src;
   tcp_pseudo_hdr->dst_ip = ip_hdr->ip_dst;
   tcp_pseudo_hdr->reserved = 0;
   tcp_pseudo_hdr->protocol = ip_protocol_tcp;
   tcp_pseudo_hdr->length = length;
-
+  */
   printf("Before MMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
   fflush(stdout);
-  memcpy(tcp_pseudo_hdr + sizeof(sr_tcp_pseudo_hdr_t), tcp_hdr, length);
+  /*memcpy(tcp_pseudo_hdr + sizeof(sr_tcp_pseudo_hdr_t), tcp_hdr, length);*/
   printf("After MMMMMMMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
   fflush(stdout);
-  tcp_hdr->checksum = 0;
+  /*tcp_hdr->checksum = 0;
   tcp_hdr->checksum  = cksum(tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t) + length);
-  free(tcp_pseudo_hdr);
+  free(tcp_pseudo_hdr);*/
 }
 
