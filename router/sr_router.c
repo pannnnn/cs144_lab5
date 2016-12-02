@@ -664,7 +664,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 lookup_conns->tcp_state = ESTABLISHED;
               }
               pthread_mutex_unlock(&((sr->nat)->lock));
-              tcp_packet->src_port = lookup_ext->aux_ext;
+              tcp_packet->dst_port = lookup_ext->aux_int;
               ip_packet->ip_dst = lookup_ext->ip_int;
               tcp_checksum(packet, len, sr);
               ip_packet->ip_sum = 0;
@@ -686,7 +686,7 @@ void nat_handle_ip(struct sr_instance* sr,
               lookup_conns->tcp_state = CLOSE_WAIT;
             }
             pthread_mutex_unlock(&((sr->nat)->lock));
-            tcp_packet->src_port = lookup_ext->aux_ext;
+            tcp_packet->dst_port = lookup_ext->aux_int;
             ip_packet->ip_dst = lookup_ext->ip_int;
             tcp_checksum(packet, len, sr);
             ip_packet->ip_sum = 0;
