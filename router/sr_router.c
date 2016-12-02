@@ -625,14 +625,14 @@ void nat_handle_ip(struct sr_instance* sr,
                 free(lookup_ext);
               }
             }
-        }/*else if (ip_packet->ip_p == ip_protocol_tcp) {
+        }else if (ip_packet->ip_p == ip_protocol_tcp) {
           printf("Handling external to internals TCP\n");
           fflush(stdout);
           sr_tcp_hdr_t* tcp_packet = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
-          struct sr_nat_mapping* lookup_int = sr_nat_lookup_external(sr->nat,
+          struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat,
                                                                 tcp_packet->src_port,
                                                                 nat_mapping_tcp);
-          if (!lookup_int && (!((ntohs(tcp_packet->flags) & 0x10) >> 4) || !((ntohs(tcp_packet->flags) & 0x2) >> 1)) {
+          if (!lookup_ext && ((!((ntohs(tcp_packet->flags) & 0x10)) >> 4) || !((ntohs(tcp_packet->flags) & 0x2) >> 1))) {
             printf("It's a syn ack from outside. \n");
           
             return;
@@ -652,18 +652,16 @@ void nat_handle_ip(struct sr_instance* sr,
                 }
                 pthread_mutex_unlock(&((sr->nat)->lock));
                 tcp_packet->src_port = lookup_ext->aux_ext;
-                ip_packet->ip_src = lookup_ext->ip_ext;
                 print_addr_ip_int(lookup_ext->ip_ext);
                 tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
-                iface = sr_get_interface(sr, ETH1);
                 printf("handleing the packet\n");
-                sr_handle_ip(sr, packet, len, iface->name);
-                free(lookup_int);
+                sr_handle_ip(sr, packet, len, ETH1);
+                free(lookup_ext);
              }
           }
-        }*/
+        }
       }
     }
   }
