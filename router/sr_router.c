@@ -640,7 +640,7 @@ void nat_handle_ip(struct sr_instance* sr,
           } else if ((ntohs(tcp_packet->flags) & 0x10) >> 4) {
              if (lookup_ext) {
                 printf("there is a mapping\n");
-                pthread_mutex_lock(&((sr->nat)->lock));
+                /*pthread_mutex_lock(&((sr->nat)->lock));
                 struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(lookup_ext,
                                                                       ip_packet->ip_src,
                                                                       tcp_packet->src_port);
@@ -650,7 +650,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 } else if (lookup_conns->tcp_state == SYN_SENT) {
                   lookup_conns->tcp_state = ESTABLISHED;
                 }
-                pthread_mutex_unlock(&((sr->nat)->lock));
+                pthread_mutex_unlock(&((sr->nat)->lock));*/
                 tcp_packet->src_port = lookup_ext->aux_ext;
                 print_addr_ip_int(lookup_ext->ip_ext);
                 tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
