@@ -666,7 +666,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 print_addr_ip_int(lookup_ext->ip_ext);
                 printf("Before tcp cksum %s\n", sr_get_interface(sr,ETH2)->name);
                 fflush(stdout);
-                tcp_checksum(packet, len, sr);
+                /* tcp_checksum(packet, len, sr); */
                 printf("after cksum %s\n", sr_get_interface(sr,ETH2)->name);
                 fflush(stdout);
                 ip_packet->ip_dst = lookup_ext->ip_int;
