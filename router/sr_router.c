@@ -598,7 +598,7 @@ void nat_handle_ip(struct sr_instance* sr,
               struct sr_rt* next_hop = get_next_hop(sr,ip_packet->ip_dst);
               printf("find the next hop");
               if(sr_get_interface(sr, next_hop->interface)->ip == sr_get_interface(sr, ETH1)->ip){
--               printf("dropping direct external -> internal packet\n");
+                 printf("dropping direct external -> internal packet\n");
               }else{
                 /* imcp, tcp, or other packets sent to somewhere else*/
                 sr_handle_ip(sr, packet, len, ETH2);
