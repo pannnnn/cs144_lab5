@@ -243,6 +243,8 @@ void sr_handle_ip(struct sr_instance* sr,
               printf("From ETH1!\n");
               fflush(stdout);
               new_iface = sr_get_interface(sr,ETH2);
+              printf("ip of new iface %d\n",new_iface->ip);
+              fflush(stdout);
               printf("Eth setted\n");
               fflush(stdout);
             }else if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH2)->ip){
@@ -542,6 +544,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 iface = sr_get_interface(sr, ETH1);
                 printf("handleing the packet\n");
+    
                 sr_handle_ip(sr, packet, len, iface->name);
                 free(lookup_int);
               } else {
