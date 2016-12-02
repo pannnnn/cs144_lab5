@@ -131,7 +131,7 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   printf("before inserting\n");
   printf("NAAAAAAAAAAT: %d\n", nat->mappings);
   fflush(stdout);
-  if(!(nat->mappings)){
+  if((nat->mappings)){
     printf("before insert mappings id:%d\n",nat->mappings->aux_int);
     fflush(stdout);
   }else{
