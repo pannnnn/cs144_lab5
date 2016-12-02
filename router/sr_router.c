@@ -634,7 +634,7 @@ void nat_handle_ip(struct sr_instance* sr,
                                                                 nat_mapping_tcp);
           if (!lookup_ext && ((!((ntohs(tcp_packet->flags) & 0x10)) >> 4) || !((ntohs(tcp_packet->flags) & 0x2) >> 1))) {
             printf("It's a syn ack from outside. \n");
-          
+            fflush(stdout);
             return;
 
           } else if ((ntohs(tcp_packet->flags) & 0x10) >> 4) {
