@@ -723,7 +723,11 @@ void tcp_checksum(sr_ip_hdr_t *packet, unsigned int len){
                                             packet->ip_hl*4);
   sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t) +
                                                length);
+  printf("Before MMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
+  fflush(stdout);
   memcpy(tcp_pseudo_hdr + sizeof(sr_tcp_pseudo_hdr_t), tcp_hdr, length);
+  printf("After MMMMMMMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
+  fflush(stdout);
   tcp_pseudo_hdr->src_ip = packet->ip_src;
   tcp_pseudo_hdr->dst_ip = packet->ip_dst;
   tcp_pseudo_hdr->reserved = 0;
