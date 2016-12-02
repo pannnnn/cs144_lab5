@@ -634,6 +634,7 @@ void nat_handle_ip(struct sr_instance* sr,
             }
         }else if (ip_packet->ip_p == ip_protocol_tcp) {
           printf("Handling external to internals TCP\n");
+          printf("after if  printing eth %s\n", sr_get_interface(sr,ETH2)->name);
           fflush(stdout);
           sr_tcp_hdr_t* tcp_packet = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
           struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat,
@@ -646,6 +647,8 @@ void nat_handle_ip(struct sr_instance* sr,
 
           } else if ((ntohs(tcp_packet->flags) & 0x10) >> 4) {
              if (lookup_ext) {
+                printf("Before print addr  printing eth %s\n", sr_get_interface(sr,ETH2)->name);
+                fflush(stdout);
                 printf("there is a mapping\n");
                 /*pthread_mutex_lock(&((sr->nat)->lock));
                 struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(lookup_ext,
