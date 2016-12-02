@@ -640,7 +640,7 @@ void nat_handle_ip(struct sr_instance* sr,
           struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat,
                                                                 tcp_packet->dst_port,
                                                                 nat_mapping_tcp);
-          if ((ntohs(tcp_packet->flags) & 0x10) >> 4) {
+          if ((ntohs(tcp_packet->flags) & 0x2) >> 1) {
             if (lookup_ext) {
               pthread_mutex_lock(&((sr->nat)->lock));
               struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
