@@ -453,14 +453,13 @@ void nat_handle_ip(struct sr_instance* sr,
                                                                 nat_mapping_icmp);
           if (!lookup_int) {
             printf("Im inserting \n");
-            pthread_mutex_lock(&(nat->lock));
+            pthread_mutex_lock(&(sr->nat->lock));
             lookup_int = sr_nat_insert_mapping(sr->nat, ip_packet->ip_src,
                                               icmp_packet->icmp_id,
                                               nat_mapping_icmp);
-            pthread_mutex_unlock(&(nat->lock));
+            pthread_mutex_unlock(&(sr->nat->lock));
           }
           printf("mapping:");
-          printf();
           icmp_packet->icmp_id = lookup_int->aux_ext;
           icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
           ip_packet->ip_src = lookup_int->ip_ext;
