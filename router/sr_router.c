@@ -447,8 +447,8 @@ void nat_handle_ip(struct sr_instance* sr,
           icmp_type3_type11(sr, ip_packet, 3, 0, ETH1);
         }else{
           sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
-          print_hdr_icmp((uint8_t *) icmp_packet);
           icmp_packet->icmp_sum = 0;
+          print_hdrs((uint8_t *) packet);
           struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat, 
                                                                 ip_packet->ip_src, 
                                                                 icmp_packet->icmp_id, 
