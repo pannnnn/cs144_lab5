@@ -240,8 +240,12 @@ void sr_handle_ip(struct sr_instance* sr,
             new_iface = sr_get_interface(sr, next_hop->interface);
           }else{
             if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH1)->ip){
+              printf("From ETH1!\n");
+              fflush(stdout);
               new_iface = sr_get_interface(sr,ETH2);
             }else if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH2)->ip){
+              printf("From ETH2!\n");
+              fflush(stdout);
               new_iface = sr_get_interface(sr,ETH1);
             }else{
               printf("Get echo reply from strange interface\n");
