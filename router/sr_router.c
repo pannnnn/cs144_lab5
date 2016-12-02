@@ -461,6 +461,8 @@ void nat_handle_ip(struct sr_instance* sr,
                                               nat_mapping_icmp);
             pthread_mutex_unlock(&(sr->nat->lock));
           }
+          printf("after call of insert mappings id:%d\n",lookup_int->aux_int);
+          fflush(stdout);
           printf("mapping:");
           icmp_packet->icmp_id = lookup_int->aux_ext;
           icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
