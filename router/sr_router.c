@@ -539,7 +539,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_packet->src_port = lookup_int->aux_ext;
                 ip_packet->ip_src = lookup_int->ip_ext;
                 print_addr_ip_int(lookup_int->ip_ext);
-                tcp_checksum(packet, len, sr);
+                /*tcp_checksum(packet, len, sr);*/
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 printf("handleing the packet\n");
@@ -565,7 +565,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_packet->src_port = lookup_int->aux_ext;
                 ip_packet->ip_src = lookup_int->ip_ext;
                 print_addr_ip_int(lookup_int->ip_ext);
-                tcp_checksum(packet, len, sr);
+                /*tcp_checksum(packet, len, sr);*/
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 print_hdr_ip((uint8_t *) ip_packet);
@@ -587,7 +587,7 @@ void nat_handle_ip(struct sr_instance* sr,
             pthread_mutex_unlock(&((sr->nat)->lock));
             tcp_packet->src_port = lookup_int->aux_ext;
             ip_packet->ip_src = lookup_int->ip_ext;
-            tcp_checksum(packet, len, sr);
+            /*tcp_checksum(packet, len, sr);*/
             ip_packet->ip_sum = 0;
             ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
             /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
@@ -666,7 +666,7 @@ void nat_handle_ip(struct sr_instance* sr,
               pthread_mutex_unlock(&((sr->nat)->lock));
               tcp_packet->dst_port = lookup_ext->aux_int;
               ip_packet->ip_dst = lookup_ext->ip_int;
-              tcp_checksum(packet, len, sr);
+              /*tcp_checksum(packet, len, sr);*/
               ip_packet->ip_sum = 0;
               ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
               sr_handle_ip(sr, packet, len, ETH2);
@@ -688,7 +688,7 @@ void nat_handle_ip(struct sr_instance* sr,
             pthread_mutex_unlock(&((sr->nat)->lock));
             tcp_packet->dst_port = lookup_ext->aux_int;
             ip_packet->ip_dst = lookup_ext->ip_int;
-            tcp_checksum(packet, len, sr);
+            /*tcp_checksum(packet, len, sr);*/
             ip_packet->ip_sum = 0;
             ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
             sr_handle_ip(sr, packet, len, ETH2);
