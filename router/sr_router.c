@@ -476,7 +476,7 @@ void nat_handle_ip(struct sr_instance* sr,
       } else if (ip_packet->ip_p == ip_protocol_tcp) {
           printf("Handling internal to external TCP\n");
           fflush(stdout);
-          sr_tcp_hdr_t* tcp_packet = (sr_tcp_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
+          sr_tcp_hdr_t* tcp_packet = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
           struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat,
                                                                 ip_packet->ip_src,
                                                                 tcp_packet->src_port,
