@@ -254,7 +254,6 @@ void sr_handle_ip(struct sr_instance* sr,
           }
           ip_packet->ip_ttl--;
           ip_packet->ip_sum = 0;
-
           uint8_t* new_ether = malloc(len);
           sr_ethernet_hdr_t* new_ether_hdr = (sr_ethernet_hdr_t*) new_ether;
           sr_ip_hdr_t* new_ip = (sr_ip_hdr_t*) (new_ether +
@@ -660,6 +659,8 @@ void nat_handle_ip(struct sr_instance* sr,
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 printf("handleing the packet\n");
                 sr_handle_ip(sr, packet, len, ETH1);
+                printf("after handle ip\n");
+                fflush(stdout);
                 free(lookup_ext);
              }
           }
