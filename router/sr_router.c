@@ -266,6 +266,8 @@ void sr_handle_ip(struct sr_instance* sr,
           fflush(stdout);
           memcpy(new_ip, ip_packet, len - sizeof(sr_ethernet_hdr_t));
           new_ip->ip_sum = cksum(new_ip, new_ip->ip_hl*4);
+          printf("before cksum\n");
+          fflush(stdout);
           memcpy(new_ether_hdr->ether_shost, new_iface->addr, 6);
           printf("after memcpy\n");
           fflush(stdout);
