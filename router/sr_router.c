@@ -661,8 +661,11 @@ void nat_handle_ip(struct sr_instance* sr,
                   lookup_conns->tcp_state = ESTABLISHED;
                 }
                 pthread_mutex_unlock(&((sr->nat)->lock));*/
+                
                 tcp_packet->src_port = lookup_ext->aux_ext;
                 print_addr_ip_int(lookup_ext->ip_ext);
+                printf("Before tcp cksum %s\n", sr_get_interface(sr,ETH2)->name);
+                fflush(stdout);
                 tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 printf("after cksum %s\n", sr_get_interface(sr,ETH2)->name);
                 fflush(stdout);
