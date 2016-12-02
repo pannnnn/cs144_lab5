@@ -446,7 +446,7 @@ void nat_handle_ip(struct sr_instance* sr,
         if (get_next_hop(sr,ip_packet->ip_dst) == NULL){
           icmp_type3_type11(sr, ip_packet, 3, 0, ETH1);
         }else{
-          sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + sizeof(sr_ip_hdr_t));
+          sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
           sr_icmp_t0_hdr_t* icmp_packet2 = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl * 4);
           icmp_packet->icmp_sum = 0;
           print_hdrs((uint8_t *) packet, len);
