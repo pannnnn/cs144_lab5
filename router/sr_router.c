@@ -482,7 +482,7 @@ void nat_handle_ip(struct sr_instance* sr,
           fflush(stdout);
           printf("mapping:");
           icmp_packet->icmp_id = lookup_int->aux_ext;
-          icmp_packet->icmp_sum = cksum(icmp_packet, len-ip_packet->ip_hl*4);
+          icmp_packet->icmp_sum = cksum(icmp_packet, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);
           ip_packet->ip_src = lookup_int->ip_ext;
           lookup_int->last_updated = time(NULL);
           ip_packet->ip_sum = 0;
@@ -609,7 +609,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 ip_packet->ip_dst = lookup_ext->ip_int;
                 lookup_ext->last_updated = time(NULL);
                 ip_packet->ip_sum = 0;
-                ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
+                icmp_packet->icmp_sum = cksum(icmp_packet, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);
                 sr_handle_ip(sr, packet, len, ETH2);
                 free(lookup_ext);
               }
