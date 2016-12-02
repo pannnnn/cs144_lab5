@@ -256,15 +256,19 @@ void sr_handle_ip(struct sr_instance* sr,
           }
           ip_packet->ip_ttl--;
           ip_packet->ip_sum = 0;
+          printf("ip packet set checksum to -\n");
+          fflush(stdout);
           uint8_t* new_ether = malloc(len);
           sr_ethernet_hdr_t* new_ether_hdr = (sr_ethernet_hdr_t*) new_ether;
           sr_ip_hdr_t* new_ip = (sr_ip_hdr_t*) (new_ether +
                                                 sizeof(sr_ethernet_hdr_t));
-
+          printf("before memcpy\n");
+          fflush(stdout);
           memcpy(new_ip, ip_packet, len - sizeof(sr_ethernet_hdr_t));
           new_ip->ip_sum = cksum(new_ip, new_ip->ip_hl*4);
           memcpy(new_ether_hdr->ether_shost, new_iface->addr, 6);
-
+          printf("after memcpy\n");
+          fflush(stdout);
           new_ether_hdr->ether_type = htons(ethertype_ip);
 
           /*
