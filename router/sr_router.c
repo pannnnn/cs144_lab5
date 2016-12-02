@@ -424,7 +424,7 @@ void nat_handle_ip(struct sr_instance* sr,
 {
   sr_ip_hdr_t* ip_packet = (sr_ip_hdr_t*)
                            (packet + sizeof(sr_ethernet_hdr_t));
-  printf("IP packet iDIDIDIDIDI: %d\n",((sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4))->icmp_id);
+  print_hdr_ip((uint32_t*) ip_packet);
   if (valid_ip_packet(ip_packet, len - sizeof(sr_ethernet_hdr_t))) {
     struct sr_if* iface = in_if_list(sr, (uint32_t) ip_packet->ip_dst);
     /*Inbound to Inbound*/
