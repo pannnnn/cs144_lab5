@@ -447,18 +447,8 @@ void nat_handle_ip(struct sr_instance* sr,
           icmp_type3_type11(sr, ip_packet, 3, 0, ETH1);
         }else{
           sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
-          sr_icmp_t0_hdr_t* icmp_packet2 = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl * 4);
           icmp_packet->icmp_sum = 0;
           print_hdrs((uint8_t *) packet, len);
-          printf("ICMP IDIDIDIDIDIDIDIDIDID MANNULY %d\n", *(icmp_packet));
-          printf("ICMP IDIDIDIDIDIDIDIDIDID MANNULY NEXT %d\n", *(icmp_packet + 4));
-          printf("ICMP IDIDIDIDIDIDIDIDIDID MANNULY NEXT %d\n", *(icmp_packet + 8));
-          printf("ICMP IDIDIDIDIDIDIDIDIDID MANNULY %d\n", icmp_packet->icmp_id);
-          printf("ICMP IDIDIDIDIDIDIDIDIDID MANNULY NEXT %d\n", icmp_packet->icmp_type);
-          printf("ICMP IDIDIDIDIDIDIDIDIDID MANNULY NEXT %d\n", icmp_packet->icmp_code);
-          printf("222222ICMP IDIDIDIDIDIDIDIDIDID MANNULY %d\n", icmp_packet2->icmp_id);
-          printf("222222ICMP IDIDIDIDIDIDIDIDIDID MANNULY NEXT %d\n", icmp_packet2->icmp_type);
-          printf("222222ICMP IDIDIDIDIDIDIDIDIDID MANNULY NEXT %d\n", icmp_packet2->icmp_code);
           struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat, 
                                                                 ip_packet->ip_src, 
                                                                 icmp_packet->icmp_id, 
@@ -477,7 +467,7 @@ void nat_handle_ip(struct sr_instance* sr,
           ip_packet->ip_src = lookup_int->ip_ext;
           lookup_int->last_updated = time(NULL);
           ip_packet->ip_sum = 0;
-          ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+          ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
           sr_handle_ip(sr, packet, len, ETH1);
           free(lookup_int);
         }
@@ -600,7 +590,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 ip_packet->ip_dst = lookup_ext->ip_int;
                 lookup_ext->last_updated = time(NULL);
                 ip_packet->ip_sum = 0;
-                ip_packet->ip_sum = cksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+                ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 sr_handle_ip(sr, packet, len, ETH2);
                 free(lookup_ext);
               }
