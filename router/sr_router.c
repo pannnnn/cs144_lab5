@@ -424,7 +424,7 @@ void nat_handle_ip(struct sr_instance* sr,
 {
   sr_ip_hdr_t* ip_packet = (sr_ip_hdr_t*)
                            (packet + sizeof(sr_ethernet_hdr_t));
-  print_hdr_ip((uint32_t*) ip_packet);
+  print_hdr_ip((uint8_t*) ip_packet);
   if (valid_ip_packet(ip_packet, len - sizeof(sr_ethernet_hdr_t))) {
     struct sr_if* iface = in_if_list(sr, (uint32_t) ip_packet->ip_dst);
     /*Inbound to Inbound*/
@@ -447,6 +447,7 @@ void nat_handle_ip(struct sr_instance* sr,
           icmp_type3_type11(sr, ip_packet, 3, 0, ETH1);
         }else{
           sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
+          print_hdr_icmp((uint8_t *) icmp_packet);
           icmp_packet->icmp_sum = 0;
           struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat, 
                                                                 ip_packet->ip_src, 
