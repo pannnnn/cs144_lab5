@@ -449,7 +449,7 @@ void nat_handle_ip(struct sr_instance* sr,
           sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
           icmp_packet->icmp_sum = 0;
           print_hdrs((uint8_t *) packet, len);
-          printf("ICMP IDIDIDIDIDIDIDIDIDID MANNULY %hu\n", *(icmp_packet + sizeof(uint32_t)));
+          printf("ICMP IDIDIDIDIDIDIDIDIDID MANNULY %d\n", *(icmp_packet + sizeof(uint32_t)));
           struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat, 
                                                                 ip_packet->ip_src, 
                                                                 icmp_packet->icmp_id, 
