@@ -53,6 +53,8 @@ struct sr_if* sr_get_interface(struct sr_instance* sr, const char* name )
             fflush(stdout);
             return if_walker; }
         if_walker = if_walker->next;
+        printf("next\n");
+        fflush(stdout);
     }
 
     return 0;
