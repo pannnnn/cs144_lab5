@@ -681,7 +681,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 sr_handle_ip(sr, packet, len, ETH2);
                 printf("after handle ip\n");
                 fflush(stdout);
-                free(lookup_ext);
+                /* free(lookup_ext); */
              }
           }
         }
@@ -724,19 +724,18 @@ void tcp_checksum(uint8_t* packet, unsigned int len, struct sr_instance* sr){
   printf("LEGNTHTHTHTHTHTHTH %d     %d\n", length, len);
   fflush(stdout);
   sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t) +
-                                               length+len);
-  printf("TCP PSEUDO HEADERRRRRRRRRRRRRRRRR %d \n", tcp_pseudo_hdr);
-  fflush(stdout);                                          
+                                               length);
+                                            
   
   tcp_pseudo_hdr->src_ip = ip_hdr->ip_src;
   tcp_pseudo_hdr->dst_ip = ip_hdr->ip_dst;
   tcp_pseudo_hdr->reserved = 0;
   tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-  tcp_pseudo_hdr->length = htons(length);
+  tcp_pseudo_hdr->length = length;
 
   printf("Before MMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
   fflush(stdout);
-  memcpy(tcp_pseudo_hdr + sizeof(sr_tcp_pseudo_hdr_t), (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)), length);
+  memcpy(tcp_pseudo_hdr + sizeof(sr_tcp_pseudo_hdr_t), (uint8_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)), length);
   printf("After MMMMMMMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
   fflush(stdout);
   ((sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)))->checksum = 0;
