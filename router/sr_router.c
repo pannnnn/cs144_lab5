@@ -690,6 +690,7 @@ void nat_handle_ip(struct sr_instance* sr,
               /*tcp_checksum(packet, len, sr);*/
               ip_packet->ip_sum = 0;
               ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
+              print_hdr_ip(ip_packet);
               printf("TTTTTTTTTTRing to sent the packet for incoming tcp packet !!!\n");
               sr_handle_ip(sr, packet, len, ETH2);
               free(lookup_ext);             
