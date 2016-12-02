@@ -672,6 +672,27 @@ void nat_handle_ip(struct sr_instance* sr,
               sr_handle_ip(sr, packet, len, ETH2);
               free(lookup_ext);                                                 
             }
+          } else if ((ntohs(tcp_packet->flags) & 0x10) >> 4){
+            if (lookup_ext) {
+              pthread_mutex_lock(&((sr->nat)->lock));
+              struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
+                                                                    tcp_packet->dst_port,
+                                                                    nat_mapping_tcp);
+              struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(lookup_ext,
+                                                                    ip_packet->ip_src,
+                                                                    tcp_packet->src_port);
+              if (lookup_conns && lookup_conns->tcp_state == SYN_SENT) {
+                lookup_conns->tcp_state = ESTABLISHED;
+              }
+              pthread_mutex_unlock(&((sr->nat)->lock));
+              tcp_packet->dst_port = lookup_ext->aux_int;
+              ip_packet->ip_dst = lookup_ext->ip_int;
+              /*tcp_checksum(packet, len, sr);*/
+              ip_packet->ip_sum = 0;
+              ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
+              sr_handle_ip(sr, packet, len, ETH2);
+              free(lookup_ext);             
+            }
           } else if (!lookup_ext) {
             return;
           } else if (ntohs(tcp_packet->flags) & 0x1) {
