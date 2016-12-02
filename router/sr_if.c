@@ -46,6 +46,8 @@ struct sr_if* sr_get_interface(struct sr_instance* sr, const char* name )
 
     while(if_walker)
     {
+        printf("this is if_walker::::::::%d\n",if_walker->ip);
+        fflush(stdout);
        if(!strncmp(if_walker->name,name,sr_IFACE_NAMELEN))
         { return if_walker; }
         if_walker = if_walker->next;
