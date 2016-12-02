@@ -646,13 +646,13 @@ void nat_handle_ip(struct sr_instance* sr,
               struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
                                                                     tcp_packet->dst_port,
                                                                     nat_mapping_tcp);
-              struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(ext_mapping,
+              struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(lookup_ext,
                                                                     ip_packet->ip_src,
                                                                     tcp_packet->src_port);
 
               if (!lookup_conns) {
                 sr_nat_insert_connection(ext_mapping, ip_packet->ip_src, tcp_packet->src_port);
-                lookup_conns = sr_nat_lookup_connection(ext_mapping, ip_packet->ip_src,
+                lookup_conns = sr_nat_lookup_connection(lookup_ext, ip_packet->ip_src,
                                                                       tcp_packet->src_port);
                 if (tcp_packet->dst_port != 22) {
                   lookup_conns->syn_received = malloc(len - sizeof(sr_ethernet_hdr_t));
@@ -664,7 +664,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 lookup_conns->tcp_state = ESTABLISHED;
               }
               pthread_mutex_unlock(&((sr->nat)->lock));
-              tcp_packet->dst_port = lookup_ext->aux_int;
+              tcp_packet->src_port = lookup_ext->aux_ext;
               ip_packet->ip_dst = lookup_ext->ip_int;
               tcp_checksum(packet, len, sr);
               ip_packet->ip_sum = 0;
@@ -686,7 +686,7 @@ void nat_handle_ip(struct sr_instance* sr,
               lookup_conns->tcp_state = CLOSE_WAIT;
             }
             pthread_mutex_unlock(&((sr->nat)->lock));
-            tcp_packet->dst_port = lookup_ext->aux_int;
+            tcp_packet->src_port = lookup_ext->aux_ext;
             ip_packet->ip_dst = lookup_ext->ip_int;
             tcp_checksum(packet, len, sr);
             ip_packet->ip_sum = 0;
@@ -707,7 +707,7 @@ void nat_handle_ip(struct sr_instance* sr,
         }
       }
     }
-  }
+  } 
 }
 
 int valid_tcp_packet(sr_ip_hdr_t *packet, unsigned int len) {
@@ -740,7 +740,7 @@ int valid_tcp_packet(sr_ip_hdr_t *packet, unsigned int len) {
 void tcp_checksum(uint8_t* packet, unsigned int len, struct sr_instance* sr){
   int length = len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
   sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));
-  /* sr_tcp_hdr_t* tcp_hdr  = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));*/
+  sr_tcp_hdr_t* tcp_hdr  = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
   printf("LEGNTHTHTHTHTHTHTH %d     %d\n", length, len);
   fflush(stdout);
   sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t) +
@@ -755,11 +755,11 @@ void tcp_checksum(uint8_t* packet, unsigned int len, struct sr_instance* sr){
 
   printf("Before MMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
   fflush(stdout);
-  memcpy(tcp_pseudo_hdr + sizeof(sr_tcp_pseudo_hdr_t), (uint8_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)), length);
+  memcpy(tcp_pseudo_hdr + sizeof(sr_tcp_pseudo_hdr_t), tcp_hdr, length);
   printf("After MMMMMMMMMMMMMMMMMMMMMM %s\n", sr_get_interface(sr,ETH2)->name);
   fflush(stdout);
-  ((sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)))->checksum = 0;
-  ((sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t)))->checksum  = cksum(tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t) + length);
+  tcp_hdr->checksum = 0;
+  tcp_hdr->checksum  = cksum(tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t) + length);
   free(tcp_pseudo_hdr);
 }
 
