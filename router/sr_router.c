@@ -243,6 +243,8 @@ void sr_handle_ip(struct sr_instance* sr,
               printf("From ETH1!\n");
               fflush(stdout);
               new_iface = sr_get_interface(sr,ETH2);
+              printf("Eth setted\n");
+              fflush(stdout);
             }else if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH2)->ip){
               printf("From ETH2!\n");
               fflush(stdout);
