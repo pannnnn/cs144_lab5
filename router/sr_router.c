@@ -539,7 +539,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_packet->src_port = lookup_int->aux_ext;
                 ip_packet->ip_src = lookup_int->ip_ext;
                 print_addr_ip_int(lookup_int->ip_ext);
-                tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+                tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t), sr);
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 printf("handleing the packet\n");
@@ -565,7 +565,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_packet->src_port = lookup_int->aux_ext;
                 ip_packet->ip_src = lookup_int->ip_ext;
                 print_addr_ip_int(lookup_int->ip_ext);
-                tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+                tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t), sr);
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 print_hdr_ip((uint8_t *) ip_packet);
@@ -587,7 +587,7 @@ void nat_handle_ip(struct sr_instance* sr,
             pthread_mutex_unlock(&((sr->nat)->lock));
             tcp_packet->src_port = lookup_int->aux_ext;
             ip_packet->ip_src = lookup_int->ip_ext;
-            tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+            tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t), sr);
             ip_packet->ip_sum = 0;
             ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
             /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
@@ -666,7 +666,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 print_addr_ip_int(lookup_ext->ip_ext);
                 printf("Before tcp cksum %s\n", sr_get_interface(sr,ETH2)->name);
                 fflush(stdout);
-                tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
+                tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t), sr);
                 printf("after cksum %s\n", sr_get_interface(sr,ETH2)->name);
                 fflush(stdout);
                 ip_packet->ip_dst = lookup_ext->ip_int;
@@ -717,7 +717,7 @@ int valid_tcp_packet(sr_ip_hdr_t *packet, unsigned int len) {
   }
 }
 
-void tcp_checksum(sr_ip_hdr_t *packet, unsigned int len){
+void tcp_checksum(sr_ip_hdr_t *packet, unsigned int len, struct sr_instance* sr){
   int length = len - packet->ip_hl*4;
   sr_tcp_hdr_t* tcp_hdr  = (sr_tcp_hdr_t*) (packet +
                                             packet->ip_hl*4);

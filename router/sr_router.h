@@ -92,5 +92,5 @@ void nat_handle_ip(struct sr_instance*,
                    uint8_t*,
                    unsigned int,
                    char*);
-void tcp_checksum(sr_ip_hdr_t*, unsigned int);
+void tcp_checksum(sr_ip_hdr_t*, unsigned int, struct sr_instance*);
 #endif /* SR_ROUTER_H */
