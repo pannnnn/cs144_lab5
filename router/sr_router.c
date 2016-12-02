@@ -448,7 +448,7 @@ void nat_handle_ip(struct sr_instance* sr,
         }else{
           sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
           icmp_packet->icmp_sum = 0;
-          print_hdrs((uint8_t *) packet);
+          print_hdrs((uint8_t *) packet, len);
           struct sr_nat_mapping* lookup_int = sr_nat_lookup_internal(sr->nat, 
                                                                 ip_packet->ip_src, 
                                                                 icmp_packet->icmp_id, 
@@ -540,7 +540,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
-                print_hdr_ip(ip_packet);
+                print_hdr_ip((uint8_t *) ip_packet);
                 iface = sr_get_interface(sr, ETH1);
                 /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
 

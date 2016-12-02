@@ -24,7 +24,7 @@ typedef enum {
 
 struct sr_nat_connection {
   /* add TCP connection state data members here */
-  tcp_connection_state tcp_state;
+  tcp_connection_state tcp_state; 
   uint32_t ip_dst;
   uint16_t dst_port;
   time_t last_updated;
