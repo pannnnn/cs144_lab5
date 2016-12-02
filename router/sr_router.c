@@ -574,7 +574,7 @@ void nat_handle_ip(struct sr_instance* sr,
     } else {
       if (sr_get_interface(sr, ETH2)->ip == sr_get_interface(sr, interface)->ip) {
         if (ip_packet->ip_p == ip_protocol_icmp) {
-            sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (ip_packet + ip_packet->ip_hl*4);
+            sr_icmp_t0_hdr_t* icmp_packet = (sr_icmp_t0_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
             icmp_packet->icmp_sum = 0;
             struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat, 
                                                                 icmp_packet->icmp_id, 
