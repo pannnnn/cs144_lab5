@@ -542,10 +542,9 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
-                iface = sr_get_interface(sr, ETH1);
                 printf("handleing the packet\n");
     
-                sr_handle_ip(sr, packet, len, iface->name);
+                sr_handle_ip(sr, packet, len, ETH1);
                 free(lookup_int);
               } else {
                 printf("SYN FLAG SENT OUT\n");
@@ -570,10 +569,9 @@ void nat_handle_ip(struct sr_instance* sr,
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 print_hdr_ip((uint8_t *) ip_packet);
-                iface = sr_get_interface(sr, ETH1);
                 /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
 
-                sr_handle_ip(sr, packet, len, iface->name);
+                sr_handle_ip(sr, packet, len, ETH1);
               }
           } else if ((ntohs(tcp_packet->flags) & 0x1)) {
             pthread_mutex_lock(&((sr->nat)->lock));
@@ -592,10 +590,9 @@ void nat_handle_ip(struct sr_instance* sr,
             tcp_checksum(ip_packet, len-sizeof(sr_ethernet_hdr_t));
             ip_packet->ip_sum = 0;
             ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
-            iface = sr_get_interface(sr, ETH1);
             /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
 
-            sr_handle_ip(sr, packet, len, iface->name);
+            sr_handle_ip(sr, packet, len, ETH1);
           }
       }
     } else {
@@ -669,7 +666,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 ip_packet->ip_sum = 0;
                 ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
                 printf("handleing the packet\n");
-                sr_handle_ip(sr, packet, len, ETH1);
+                sr_handle_ip(sr, packet, len, ETH2);
                 printf("after handle ip\n");
                 fflush(stdout);
                 free(lookup_ext);
