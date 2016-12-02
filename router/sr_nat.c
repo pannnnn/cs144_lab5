@@ -128,7 +128,13 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   uint32_t ip_int, uint16_t aux_int, sr_nat_mapping_type type ) {
 
   pthread_mutex_lock(&(nat->lock));
-
+  printf("before inserting");
+  if(!nat->mappings){
+    printf("before insert mappings id:%d\n",nat->mappings->aux_int);
+  }else{
+    printf("nat -> mappings points to null");
+  }
+  
   /* handle insert here, create a mapping, and then return a copy of it */
   struct sr_nat_mapping *copy = malloc(sizeof(struct sr_nat_mapping));
   struct sr_nat_mapping *mapping = malloc(sizeof(struct sr_nat_mapping));
