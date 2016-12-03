@@ -220,16 +220,7 @@ void sr_handle_ip(struct sr_instance* sr,
         if(!sr->nat){
           new_iface = sr_get_interface(sr, next_hop->interface);
         }else{
-          if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH1)->ip){
-
-            new_iface = sr_get_interface(sr,ETH2);
-            
-          }else if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH2)->ip){
-  
-            new_iface = sr_get_interface(sr,ETH1);
-          }else{
-            new_iface = sr_get_interface(sr, next_hop->interface);
-          }
+          new_iface = sr_get_interface(sr, ETH1);
         }
         
         printf("I was here\n");
