@@ -222,8 +222,11 @@ void sr_handle_ip(struct sr_instance* sr,
     } else {
       /* Try to find the outgoing interface at the router for that specific
       ip packet */
-      
+        printf("before next hop");
+        fflush(stdout);
         struct sr_rt* next_hop = get_next_hop(sr, ip_packet->ip_dst);
+        printf("after next hop");
+        fflush(stdout);
         if (next_hop) {
           printf("Sending some kind of a packet\n");
           /*
