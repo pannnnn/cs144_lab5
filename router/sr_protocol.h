@@ -117,8 +117,8 @@ struct sr_tcp_hdr {
   uint16_t dst_port;
   uint32_t seq_n;
   uint32_t ack_n;
-  uint8_t flags;
-  uint8_t window;
+  uint16_t flags;
+  uint16_t window;
   uint16_t checksum;
   uint16_t urgent_ptr;
 
