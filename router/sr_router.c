@@ -466,7 +466,8 @@ void nat_handle_ip(struct sr_instance* sr,
       } else if (ip_packet->ip_p == ip_protocol_tcp) {
         /* Validdate the tcp packet with pseudo header*/
         if (valid_tcp_packet(ip_packet, len)) {
-          sr_handle_ip(sr, packet, len, ETH1);
+          icmp_type3_type11(sr, ip_packet, 3, 3, ETH1);
+          /*sr_handle_ip(sr, packet, len, ETH1);*/
         }
       }
     } else if (sr_get_interface(sr, ETH1)->ip == sr_get_interface(sr, interface)->ip) {
