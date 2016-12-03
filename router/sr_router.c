@@ -747,7 +747,7 @@ void nat_handle_ip(struct sr_instance* sr,
               sr_handle_ip(sr, packet, len, ETH2);
               free(lookup_ext);                                                 
             }
-          } /*else if ((ntohs(tcp_packet->flags) & 0x10) >> 4){
+          } else if ((ntohs(tcp_packet->flags) & 0x10) >> 4){
             if (lookup_ext) {
               pthread_mutex_lock(&((sr->nat)->lock));
               struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
@@ -780,15 +780,14 @@ void nat_handle_ip(struct sr_instance* sr,
 
               free(tcp_pseudo_hdr);
               /*free(ptr);*/
-              /*tcp_packet->checksum = cksum(tcp_packet, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);*/
-              /*ip_packet->ip_sum = 0;
+              ip_packet->ip_sum = 0;
               ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
               print_hdr_ip(ip_packet);
               printf("TTTTTTTTTTRing to sent the packet for incoming tcp packet !!!\n");
               sr_handle_ip(sr, packet, len, ETH2);
               free(lookup_ext);             
             }
-          } */else if (!lookup_ext) {
+          } else if (!lookup_ext) {
             return;
           } else if (ntohs(tcp_packet->flags) & 0x1) {
             pthread_mutex_lock(&((sr->nat)->lock));
