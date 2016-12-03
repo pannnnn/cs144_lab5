@@ -711,11 +711,11 @@ void nat_handle_ip(struct sr_instance* sr,
                 sr_nat_insert_connection(ext_mapping, ip_packet->ip_src, tcp_packet->src_port);
                 lookup_conns = sr_nat_lookup_connection(lookup_ext, ip_packet->ip_src,
                                                                       tcp_packet->src_port);
-                if (tcp_packet->dst_port != 22) {
+                /* if (tcp_packet->dst_port != 22) {
                   lookup_conns->syn_received = malloc(len - sizeof(sr_ethernet_hdr_t));
                   memcpy(lookup_conns->syn_received, ip_packet, len - sizeof(sr_ethernet_hdr_t));
                   lookup_conns->tcp_state = SYN_RECEIVED;
-                }
+                }*/
                 return;
               } else if (lookup_conns->tcp_state == SYN_SENT) {
                 lookup_conns->tcp_state = ESTABLISHED;
