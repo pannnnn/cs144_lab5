@@ -600,6 +600,14 @@ void nat_handle_ip(struct sr_instance* sr,
               }
               if ((htons(tcp_packet->flags) & 0x2) >> 1) {
                 pthread_mutex_lock(&((sr->nat)->lock));
+                struct sr_nat_syn *curr = (sr->nat)->syn;
+                while(curr){
+                  if(curr->ip_dst == ip_packet->ip_src && curr->dst_port == tcp_packet->src_port){
+                    pthread_mutex_unlock(&((sr->nat)->lock));
+                    return;
+                  }
+                  curr = curr->next;
+                }
                 struct sr_nat_syn *syns = malloc(sizeof(struct sr_nat_syn));
                 syns->ip_dst = ip_packet->ip_src;
                 syns->dst_port = tcp_packet->src_port;
