@@ -550,7 +550,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
                 tcp_pseudo_hdr->reserved = 0;
                 tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-                tcp_pseudo_hdr->length = len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
+                tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
 
                 uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
                 memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
@@ -595,7 +595,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
                 tcp_pseudo_hdr->reserved = 0;
                 tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-                tcp_pseudo_hdr->length = len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
+                tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
 
                 uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
                 memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
@@ -635,7 +635,7 @@ void nat_handle_ip(struct sr_instance* sr,
             tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
             tcp_pseudo_hdr->reserved = 0;
             tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-            tcp_pseudo_hdr->length = len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
+            tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
 
             uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
             memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
@@ -732,7 +732,7 @@ void nat_handle_ip(struct sr_instance* sr,
               tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
               tcp_pseudo_hdr->reserved = 0;
               tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-              tcp_pseudo_hdr->length = len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
+              tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
 
               uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
               memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
@@ -740,7 +740,6 @@ void nat_handle_ip(struct sr_instance* sr,
               tcp_packet->checksum = cksum(ptr, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
 
               free(tcp_pseudo_hdr);
-            /*free(ptr);*/
               /*free(ptr);*/
               /*tcp_packet->checksum = cksum(tcp_packet, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);*/
               ip_packet->ip_sum = 0;
@@ -772,7 +771,7 @@ void nat_handle_ip(struct sr_instance* sr,
               tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
               tcp_pseudo_hdr->reserved = 0;
               tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-              tcp_pseudo_hdr->length = len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
+              tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
 
               uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
               memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
@@ -814,7 +813,7 @@ void nat_handle_ip(struct sr_instance* sr,
             tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
             tcp_pseudo_hdr->reserved = 0;
             tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-            tcp_pseudo_hdr->length = len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
+            tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
 
             uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
             memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
