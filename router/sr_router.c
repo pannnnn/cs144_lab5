@@ -767,12 +767,11 @@ void tcp_checksum(uint8_t* packet, unsigned int len, struct sr_instance* sr){
   
   /*int length = len - sizeof(sr_ethernet_hdr_t) - sizeof(sr_ip_hdr_t);
   sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t));*/
-  sr_tcp_hdr_t* tcp_hdr  = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
-  sr_ip_hdr_t* ip_packet  = (sr_ip_hdr_t* ) (packet + sizeof(sr_ethernet_hdr_t));
+  sr_tcp_hdr_t* tcp_hdr = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+  sr_ip_hdr_t* ip_packet = (sr_ip_hdr_t* ) (packet + sizeof(sr_ethernet_hdr_t));
   /*printf("LEGNTHTHTHTHTHTHTH %d     %d\n", length, len);*/
   fflush(stdout);
   tcp_hdr->checksum = 0;
-  tcp_hdr->checksum = cksum(tcp_hdr, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);
   /*sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t) +
                                                length);*/
                                             
