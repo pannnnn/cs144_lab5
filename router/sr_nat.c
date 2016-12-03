@@ -48,7 +48,7 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
   while (1) {
     sleep(1.0);
     pthread_mutex_lock(&(nat->lock));
-
+    Debug("[TIMEOUT]\n");
     time_t curtime = time(NULL);
     struct sr_nat_syn *curr_syn = nat->syn;
     struct sr_nat_syn *next_syn = NULL;
