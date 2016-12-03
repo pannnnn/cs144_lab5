@@ -62,11 +62,10 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
           sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t*) (curr_syn->syn_received + sizeof(sr_ethernet_hdr_t));
           icmp_type3_type11(nat->sr, ip_hdr, 3, 3, ETH2);
         }
-        free(curr_syn);
         curr_syn = next_syn;
 
       }else{
-        Debug("[TIMEOUT] %d", difftime(curtime,curr_syn->last_updated));
+        Debug("[TIMEOUT] %f", difftime(curtime,curr_syn->last_updated));
         curr_syn = curr_syn->next;
       }
     }
