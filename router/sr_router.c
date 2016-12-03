@@ -222,10 +222,10 @@ void sr_handle_ip(struct sr_instance* sr,
     } else {
       /* Try to find the outgoing interface at the router for that specific
       ip packet */
-        printf("before next hop");
+        printf("before next hop\n");
         fflush(stdout);
         struct sr_rt* next_hop = get_next_hop(sr, ip_packet->ip_dst);
-        printf("after next hop");
+        printf("after next hop\n");
         fflush(stdout);
         if (next_hop) {
           printf("Sending some kind of a packet\n");
@@ -594,7 +594,27 @@ void nat_handle_ip(struct sr_instance* sr,
             if (!lookup_ext) {
               /* handle imcp or tcp targeted to one of the interfaces from server1 or server2*/
               printf("No mappping found\n");
-              sr_handle_ip(sr, packet, len, ETH2);
+              if (tcp_packet->dst_port == 22) {
+                icmp_type3_type11(sr, ip_packet, 3, 3, ETH2);
+                return;
+              }
+              if ((tcp_packet->flags & 0x2) >> 1) {
+                pthread_mutex_lock(&((sr->nat)->lock));
+                struct sr_nat_syn *syns = malloc(sizeof(struct sr_nat_syn));
+                syns->ip_dst = ip_packet->ip_src;
+                syns->dst_port = tcp_packet->src_port;
+
+                uint8_t* unsolicited_packet = malloc(len);
+                memcpy(unsolicited_packet, packet, len);
+                syns->syn_received = unsolicited_packet;
+                syns->len = len;
+                syns->next = (sr->nat)->syn;
+                (sr->nat)->syn = syns;
+                pthread_mutex_unlock(&((sr->nat)->lock));
+              } else {
+                return;
+              }
+              /*sr_handle_ip(sr, packet, len, ETH2);*/
             }else{
               /* handle tcp ack from server*/
               tcp_packet->dst_port = lookup_ext->aux_int;

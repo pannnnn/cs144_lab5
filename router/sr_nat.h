@@ -24,14 +24,26 @@ typedef enum {
 
 struct sr_nat_connection {
   /* add TCP connection state data members here */
-  tcp_connection_state tcp_state; 
-  uint32_t ip_dst;
+  /*tcp_connection_state tcp_state;*/ 
+  /*uint32_t ip_dst;
   uint16_t dst_port;
   time_t last_updated;
   sr_ip_hdr_t* syn_received;
+  */
 
   struct sr_nat_connection *next;
 };
+
+struct sr_nat_syn {
+  uint32_t ip_dst;
+  uint16_t dst_port;
+  time_t last_updated; /*received time*/
+  uint8_t* syn_received;
+  unsigned int len;
+  struct sr_nat_syn *next;
+
+};
+
 
 struct sr_nat_mapping {
   sr_nat_mapping_type type;
@@ -42,6 +54,7 @@ struct sr_nat_mapping {
   time_t last_updated; /* use to timeout mappings */
   struct sr_nat_connection *conns; /* list of connections. null for ICMP */
   struct sr_nat_mapping *next;
+  /* int unsolicited; */
 };
 
 struct sr_nat {
@@ -52,6 +65,7 @@ struct sr_nat {
   int tcp_established_idle;
   int tcp_transitory_idle;
   uint16_t identifier_or_port;
+  struct sr_nat_syn *syn;
   /* threading */
   pthread_mutex_t lock;
   pthread_mutexattr_t attr;
@@ -79,8 +93,9 @@ struct sr_nat_mapping *sr_nat_lookup_internal(struct sr_nat *nat,
 struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   uint32_t ip_int, uint16_t aux_int, sr_nat_mapping_type type );
 
+void nat_mapping_destroy(struct sr_nat *nat, struct sr_nat_mapping *entry);
+/*
 void sr_nat_insert_connection(struct sr_nat_mapping *mapping,
-  uint32_t ip_dst, uint16_t dst_port);
 
 struct sr_nat_connection *sr_nat_lookup_connection(struct sr_nat_mapping *mapping,
   uint32_t ip_dst, uint16_t dst_port);
@@ -89,5 +104,6 @@ struct sr_nat_mapping *sr_nat_internal_mapping(struct sr_nat *nat,
   uint32_t ip_int, uint16_t aux_int, sr_nat_mapping_type type);
 
 struct sr_nat_mapping *sr_nat_external_mapping(struct sr_nat *nat,
-  uint16_t aux_ext, sr_nat_mapping_type type);
+  uint16_t aux_ext, sr_nat_mapping_type type);*/
+
 #endif

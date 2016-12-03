@@ -50,7 +50,25 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
     pthread_mutex_lock(&(nat->lock));
 
     time_t curtime = time(NULL);
+    struct sr_nat_syn *curr_syn = nat->syn;
+    struct sr_nat_syn *next_syn = NULL;
+    while(curr_syn){
+      if (difftime(curtime,curr_syn->last_updated) >= 6){
+        next_syn = curr_syn->next;
+        sr_tcp_hdr_t* tcp_hdr = (sr_tcp_hdr_t*) (curr_syn->syn_received + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+        if(sr_nat_lookup_external(nat, tcp_hdr->dst_port, nat_mapping_tcp)){
+          nat_handle_ip(nat->sr, curr_syn->syn_received , curr_syn->len, ETH2);
+        }else{
+          sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t*) (curr_syn->syn_received + sizeof(sr_ethernet_hdr_t));
+          icmp_type3_type11(nat->sr, ip_hdr, 3, 3, ETH2);
+        }
+        free(curr_syn);
+        curr_syn = next_syn;
 
+      }else{
+        curr_syn = curr_syn->next;
+      }
+    }
     /* handle periodic tasks here */
     struct sr_nat_mapping* curr = nat->mappings;
     struct sr_nat_mapping* next = NULL;
@@ -58,7 +76,7 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
         if (curr->type == nat_mapping_icmp){
           if (difftime(curtime,curr->last_updated) > nat->icmp_query){
             next = curr->next;
-            free(curr);
+            nat_mapping_destroy(nat, curr);
             curr = next;
           }else{
             curr = curr->next;
@@ -66,7 +84,7 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
         }else if (curr->type == nat_mapping_tcp){
           if (difftime(curtime,curr->last_updated) > nat->tcp_established_idle){
             next = curr->next;
-            free(curr);
+            nat_mapping_destroy(nat, curr);
             curr = next;
           }else{
             curr = curr->next;
@@ -95,12 +113,6 @@ struct sr_nat_mapping *sr_nat_lookup_external(struct sr_nat *nat,
       copy = malloc(sizeof(struct sr_nat_mapping));
       memcpy(copy, curr, sizeof(struct sr_nat_mapping));
       pthread_mutex_unlock(&(nat->lock));
-      printf("From outside Printing mapping\n");
-      printf("From outside %d\n",curr->ip_int);
-      printf("From outside %d\n",curr->ip_ext);
-      printf("From outside %d\n",curr->aux_int);
-      printf("From outside %d\n",curr->aux_ext);
-      return copy;
     }
     curr = curr->next;
   }
@@ -127,11 +139,6 @@ struct sr_nat_mapping *sr_nat_lookup_internal(struct sr_nat *nat,
       copy = malloc(sizeof(struct sr_nat_mapping));
       memcpy(copy, curr, sizeof(struct sr_nat_mapping));
       pthread_mutex_unlock(&(nat->lock));
-      printf("Printing mapping\n");
-      printf("%d\n",curr->ip_int);
-      printf("%d\n",curr->ip_ext);
-      printf("%d\n",curr->aux_int);
-      printf("%d\n",curr->aux_ext);
       return copy;
     }
     printf("COPY:::%d\n", copy);
@@ -148,16 +155,6 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   uint32_t ip_int, uint16_t aux_int, sr_nat_mapping_type type ) {
 
   pthread_mutex_lock(&(nat->lock));
-  printf("before inserting\n");
-  printf("NAAAAAAAAAAT: %d\n", nat->mappings);
-  fflush(stdout);
-  if((nat->mappings)){
-    printf("before insert mappings id:%d\n",nat->mappings->aux_int);
-    fflush(stdout);
-  }else{
-    printf("nat -> mappings points to null");
-    fflush(stdout);
-  }
   
   /* handle insert here, create a mapping, and then return a copy of it */
   struct sr_nat_mapping *copy = malloc(sizeof(struct sr_nat_mapping));
@@ -166,7 +163,6 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   mapping->ip_int = ip_int;
   mapping->ip_ext = sr_get_interface(nat->sr, ETH2)->ip;
   mapping->aux_int = aux_int;
-  printf("IDIDID:%d\n",aux_int);
   if (nat->identifier_or_port > 35876) {
     nat->identifier_or_port = 1389;
   }
@@ -178,11 +174,9 @@ struct sr_nat_mapping *sr_nat_insert_mapping(struct sr_nat *nat,
   nat->mappings = mapping;
   memcpy(copy, mapping, sizeof(struct sr_nat_mapping));
   pthread_mutex_unlock(&(nat->lock));
-  printf("after insert mappings id:%d\n",nat->mappings->aux_int);
-  fflush(stdout);
   return copy;
 }
-
+/*
 void sr_nat_insert_connection(struct sr_nat_mapping *mapping,
   uint32_t ip_dst, uint16_t dst_port) {
     struct sr_nat_connection *conn = malloc(sizeof(struct sr_nat_connection));
@@ -239,7 +233,7 @@ struct sr_nat_mapping *sr_nat_external_mapping(struct sr_nat *nat,
 
   return NULL;
 }
-
+*/
 /* Frees all memory associated with this arp request entry. If this arp request
    entry is on the arp request queue, it is removed from the queue. */
 void nat_mapping_destroy(struct sr_nat *nat, struct sr_nat_mapping *entry) {
@@ -263,7 +257,7 @@ void nat_mapping_destroy(struct sr_nat *nat, struct sr_nat_mapping *entry) {
             prev = mapping;
         }
         
-        struct sr_nat_connection *conn, *nxt;
+/*        struct sr_nat_connection *conn, *nxt;
         
         for (conn = entry->conns; conn; conn = nxt) {
             nxt = conn->next;
@@ -271,7 +265,7 @@ void nat_mapping_destroy(struct sr_nat *nat, struct sr_nat_mapping *entry) {
                 free(conn->syn_received);
             free(conn);
         }
-        
+*/        
         free(entry);
     }
     
