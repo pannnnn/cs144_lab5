@@ -66,6 +66,7 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
         curr_syn = next_syn;
 
       }else{
+        Debug("[TIMEOUT] %d", difftime(curtime,curr_syn->last_updated));
         curr_syn = curr_syn->next;
       }
     }
