@@ -52,7 +52,7 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
     time_t curtime = time(NULL);
 
     /* handle periodic tasks here */
-   /* struct sr_nat_mapping* curr = nat->mappings;
+    struct sr_nat_mapping* curr = nat->mappings;
     struct sr_nat_mapping* next = NULL;
     while (curr){
         if (curr->type == nat_mapping_icmp){
@@ -65,14 +65,14 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
           }
         }else if (curr->type == nat_mapping_tcp){
           if (difftime(curtime,curr->last_updated) > nat->tcp_established_idle){
-            
+            next = curr->next;
+            free(curr);
+            curr = next;
+          }else{
+            curr = curr->next;
+          }
         }
     }
-
-
-    int tcp_established_idle;
-    int tcp_transitory_idle;*/
-
     pthread_mutex_unlock(&(nat->lock));
   }
   return NULL;
