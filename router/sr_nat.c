@@ -53,7 +53,7 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
     struct sr_nat_syn *curr_syn = nat->syn;
     struct sr_nat_syn *next_syn = NULL;
     while(curr_syn){
-      if (difftime(curtime,curr_syn->last_updated) >= 6){
+      if (difftime(curr_syn->last_updated, curtime) >= 6){
         next_syn = curr_syn->next;
         sr_tcp_hdr_t* tcp_hdr = (sr_tcp_hdr_t*) (curr_syn->syn_received + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
         if(sr_nat_lookup_external(nat, tcp_hdr->dst_port, nat_mapping_tcp)){
@@ -62,7 +62,7 @@ void *sr_nat_timeout(void *nat_ptr) {  /* Periodic Timout handling */
           sr_ip_hdr_t* ip_hdr = (sr_ip_hdr_t*) (curr_syn->syn_received + sizeof(sr_ethernet_hdr_t));
           icmp_type3_type11(nat->sr, ip_hdr, 3, 3, ETH2);
         }
-        Debug("[TIMEOUT] %lf", difftime(curtime,curr_syn->last_updated));
+        Debug("[TIMEOUT] %lf", difftime(curr_syn->last_updated, curtime));
         curr_syn = next_syn;
 
       }else{
