@@ -703,7 +703,7 @@ void nat_handle_ip(struct sr_instance* sr,
               struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
                                                                     tcp_packet->dst_port,
                                                                     nat_mapping_tcp);
-              struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(lookup_ext,
+              struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(ext_mapping,
                                                                     ip_packet->ip_src,
                                                                     tcp_packet->src_port);
 
@@ -753,7 +753,7 @@ void nat_handle_ip(struct sr_instance* sr,
               struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
                                                                     tcp_packet->dst_port,
                                                                     nat_mapping_tcp);
-              struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(lookup_ext,
+              struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(ext_mapping,
                                                                     ip_packet->ip_src,
                                                                     tcp_packet->src_port);
               if (lookup_conns && lookup_conns->tcp_state == SYN_SENT) {
