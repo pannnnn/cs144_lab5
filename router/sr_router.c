@@ -464,10 +464,12 @@ void nat_handle_ip(struct sr_instance* sr,
         /* Since it is internal to internal, handle it the way we used to. */
         sr_handle_ip(sr, packet, len, ETH1);
       } else if (ip_packet->ip_p == ip_protocol_tcp) {
+        printf("Handling Internal dddddddddddddddddddddddddddd\n");
+        icmp_type3_type11(sr, ip_packet, 3, 3, ETH1);
         /* Validdate the tcp packet with pseudo header*/
         if (valid_tcp_packet(ip_packet, len)) {
-          printf("Handling Internal dddddddddddddddddddddddddddd\n");
-          icmp_type3_type11(sr, ip_packet, 3, 3, ETH1);
+          
+          
           /*sr_handle_ip(sr, packet, len, ETH1);*/
         }
       }
