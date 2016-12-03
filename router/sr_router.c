@@ -514,7 +514,7 @@ void nat_handle_ip(struct sr_instance* sr,
             printf("Im inserting \n");
             pthread_mutex_lock(&(sr->nat->lock));
             lookup_int = sr_nat_insert_mapping(sr->nat, ip_packet->ip_src,
-                                              tcp_packet->dst_port,
+                                              tcp_packet->src_port,
                                               nat_mapping_tcp);
             pthread_mutex_unlock(&(sr->nat->lock));
           }
