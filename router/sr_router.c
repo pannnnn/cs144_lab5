@@ -598,7 +598,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 icmp_type3_type11(sr, ip_packet, 3, 3, ETH2);
                 return;
               }
-              if ((tcp_packet->flags & 0x2) >> 1) {
+              if ((htons(tcp_packet->flags) & 0x2) >> 1) {
                 pthread_mutex_lock(&((sr->nat)->lock));
                 struct sr_nat_syn *syns = malloc(sizeof(struct sr_nat_syn));
                 syns->ip_dst = ip_packet->ip_src;
