@@ -616,6 +616,7 @@ void nat_handle_ip(struct sr_instance* sr,
                 memcpy(unsolicited_packet, packet, len);
                 syns->syn_received = unsolicited_packet;
                 syns->len = len;
+                syns->last_updated = time(NULL);
                 syns->next = (sr->nat)->syn;
                 (sr->nat)->syn = syns;
                 pthread_mutex_unlock(&((sr->nat)->lock));
