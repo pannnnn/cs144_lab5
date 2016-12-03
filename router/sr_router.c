@@ -469,6 +469,7 @@ void nat_handle_ip(struct sr_instance* sr,
     } else if (sr_get_interface(sr, ETH1)->ip == sr_get_interface(sr, interface)->ip) {
       /* The packet is going out */
      
+
       if (ip_packet->ip_p == ip_protocol_icmp) {
         /* if no matching is found for the destination then drop the packet and send back dest unreachable */
         if (get_next_hop(sr,ip_packet->ip_dst) == NULL){
@@ -509,186 +510,40 @@ void nat_handle_ip(struct sr_instance* sr,
                                                                 ip_packet->ip_src,
                                                                 tcp_packet->src_port,
                                                                 nat_mapping_tcp);
-          printf("%d\n", ((ntohs(tcp_packet->flags) & 0x2) >> 1));
-          printf("%d\n", (ntohs(tcp_packet->flags)));
-          printf("%d\n", (tcp_packet->flags));
-          if (!lookup_int && !((ntohs(tcp_packet->flags) & 0x2) >> 1)) {
-            printf("Not a syn but going out\n");
-          /**No mapping and wants to sent a tcp packet out*/
-            return;
-          } else if ((ntohs(tcp_packet->flags) & 0x2) >> 1) {
-              if (lookup_int) {
-                printf("there is a mapping\n");
-                pthread_mutex_lock(&((sr->nat)->lock));
-                struct sr_nat_mapping *int_mapping = sr_nat_internal_mapping(sr->nat,
-                                                                      ip_packet->ip_src,
-                                                                      tcp_packet->src_port,
-                                                                      nat_mapping_tcp);
-                struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(int_mapping,
-                                                                      ip_packet->ip_dst,
-                                                                      tcp_packet->dst_port);
-
-                if (!lookup_conns) {
-                  printf("new connection\n");
-                  sr_nat_insert_connection(int_mapping, ip_packet->ip_dst, tcp_packet->dst_port);
-                } else if (lookup_conns->tcp_state == SYN_RECEIVED) {
-                  lookup_conns->tcp_state = ESTABLISHED;
-                  if (lookup_conns->syn_received) free(lookup_conns->syn_received);
-                } else if (lookup_conns->tcp_state == CLOSE_WAIT) {
-                  lookup_conns->tcp_state = SYN_SENT;
-                }
-                pthread_mutex_unlock(&((sr->nat)->lock));
-                tcp_packet->src_port = lookup_int->aux_ext;
-                ip_packet->ip_src = lookup_int->ip_ext;
-                print_addr_ip_int(lookup_int->ip_ext);
-                /*tcp_checksum(packet, len, sr);*/
-                tcp_packet->checksum = 0;
-                sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t));
-
-
-                tcp_pseudo_hdr->src_ip = ip_packet->ip_src;
-                tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
-                tcp_pseudo_hdr->reserved = 0;
-                tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-                tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
-
-                uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-                memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
-                memcpy(ptr+sizeof(sr_tcp_pseudo_hdr_t), tcp_packet, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
-                tcp_packet->checksum = cksum(ptr, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-
-                free(tcp_pseudo_hdr);
-                /*free(ptr);*/
-
-                /*tcp_packet->checksum = cksum(tcp_packet, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);*/
-                ip_packet->ip_sum = 0;
-                ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
-                printf("handleing the packet\n");
-    
-                sr_handle_ip(sr, packet, len, ETH1);
-                free(lookup_int);
-              } else {
-                printf("SYN FLAG SENT OUT\n");
-                fflush(stdout);
-                pthread_mutex_lock(&((sr->nat)->lock));
-                struct sr_nat_mapping *int_mapping = sr_nat_insert_mapping(sr->nat,
-                                                                 ip_packet->ip_src,
-                                                                 tcp_packet->src_port,
-                                                                 nat_mapping_tcp);
-
-                sr_nat_insert_connection(int_mapping, ip_packet->ip_dst,
-                                         tcp_packet->dst_port);
-                pthread_mutex_unlock(&((sr->nat)->lock));
-                lookup_int = sr_nat_lookup_internal(sr->nat,
-                                                    ip_packet->ip_src,
-                                                    tcp_packet->src_port,
-                                                    nat_mapping_tcp);
-                tcp_packet->src_port = lookup_int->aux_ext;
-                ip_packet->ip_src = lookup_int->ip_ext;
-                print_addr_ip_int(lookup_int->ip_ext);
-                /*tcp_checksum(packet, len, sr);*/
-                tcp_packet->checksum = 0;
-                sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t));
-
-
-                tcp_pseudo_hdr->src_ip = ip_packet->ip_src;
-                tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
-                tcp_pseudo_hdr->reserved = 0;
-                tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-                tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
-
-                uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-                memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
-                memcpy(ptr+sizeof(sr_tcp_pseudo_hdr_t), tcp_packet, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
-                tcp_packet->checksum = cksum(ptr, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-
-                free(tcp_pseudo_hdr);
-                /*free(ptr);*/
-                /*tcp_packet->checksum = cksum(tcp_packet, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);*/
-                ip_packet->ip_sum = 0;
-                ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
-                print_hdr_ip((uint8_t *) ip_packet);
-                /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
-
-                sr_handle_ip(sr, packet, len, ETH1);
-              }
-          } else if ((ntohs(tcp_packet->flags) & 0x10) >> 4){
-            if (lookup_int) {
-              pthread_mutex_lock(&((sr->nat)->lock));
-              struct sr_nat_mapping *int_mapping = sr_nat_internal_mapping(sr->nat,
-                                                                    ip_packet->ip_src,
-                                                                    tcp_packet->src_port,
-                                                                    nat_mapping_tcp);
-              struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(int_mapping,
-                                                                  ip_packet->ip_dst,
-                                                                  tcp_packet->dst_port);
-              pthread_mutex_unlock(&((sr->nat)->lock));
-              tcp_packet->src_port = lookup_int->aux_ext;
-              ip_packet->ip_src = lookup_int->ip_ext;
-
-              tcp_packet->checksum = 0;
-              sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t));
-
-              tcp_pseudo_hdr->src_ip = ip_packet->ip_src;
-              tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
-              tcp_pseudo_hdr->reserved = 0;
-              tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-              tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
-
-              uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-              memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
-              memcpy(ptr+sizeof(sr_tcp_pseudo_hdr_t), tcp_packet, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
-              tcp_packet->checksum = cksum(ptr, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-
-              free(tcp_pseudo_hdr);
-              /*free(ptr);*/
-              ip_packet->ip_sum = 0;
-              ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
-              print_hdr_ip(ip_packet);
-              printf("TTTTTTTTTTRing to sent the packet for incoming tcp packet !!!\n");
-              sr_handle_ip(sr, packet, len, ETH2);
-              free(lookup_int);             
-            }
-          } else if ((ntohs(tcp_packet->flags) & 0x1)) {
-            pthread_mutex_lock(&((sr->nat)->lock));
-            struct sr_nat_mapping *int_mapping = sr_nat_internal_mapping(sr->nat,
-                                                                  ip_packet->ip_src,
-                                                                  tcp_packet->src_port,
-                                                                  nat_mapping_tcp);
-            struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(int_mapping,
-                                                                  ip_packet->ip_dst,
-                                                                  tcp_packet->dst_port);
-            if (lookup_conns) lookup_conns->tcp_state = CLOSE_WAIT;
-
-            pthread_mutex_unlock(&((sr->nat)->lock));
-            tcp_packet->src_port = lookup_int->aux_ext;
-            ip_packet->ip_src = lookup_int->ip_ext;
-            /*tcp_checksum(packet, len, sr);*/
-            tcp_packet->checksum = 0;
-            sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t));
-
-
-            tcp_pseudo_hdr->src_ip = ip_packet->ip_src;
-            tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
-            tcp_pseudo_hdr->reserved = 0;
-            tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-            tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
-
-            uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-            memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
-            memcpy(ptr+sizeof(sr_tcp_pseudo_hdr_t), tcp_packet, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
-            tcp_packet->checksum = cksum(ptr, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-
-            free(tcp_pseudo_hdr);
-            /*free(ptr);*/
-            /*tcp_packet->checksum = cksum(tcp_packet, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);*/
-            ip_packet->ip_sum = 0;
-            ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
-            /*SHOULD WE UPDATE THE ETHERNET PACKET HERE?*/
-
-            sr_handle_ip(sr, packet, len, ETH1);
+          if (!lookup_int) {
+            printf("Im inserting \n");
+            pthread_mutex_lock(&(sr->nat->lock));
+            lookup_int = sr_nat_insert_mapping(sr->nat, ip_packet->ip_src,
+                                              tcp_packet->dst_port,
+                                              nat_mapping_tcp);
+            pthread_mutex_unlock(&(sr->nat->lock));
           }
-      }
+          tcp_packet->src_port = lookup_int->aux_ext;
+          ip_packet->ip_src = lookup_int->ip_ext;
+
+          tcp_packet->checksum = 0;
+          sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t));
+
+
+          tcp_pseudo_hdr->src_ip = ip_packet->ip_src;
+          tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
+          tcp_pseudo_hdr->reserved = 0;
+          tcp_pseudo_hdr->protocol = ip_protocol_tcp;
+          tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
+
+          uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
+          memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
+          memcpy(ptr+sizeof(sr_tcp_pseudo_hdr_t), tcp_packet, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
+          tcp_packet->checksum = cksum(ptr, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
+
+          free(tcp_pseudo_hdr);
+          /*free(ptr);*/          
+
+          ip_packet->ip_sum = 0;
+          ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
+          sr_handle_ip(sr, packet, len, ETH1);
+          free(lookup_int);
+        }
     } else {
       if (sr_get_interface(sr, ETH2)->ip == sr_get_interface(sr, interface)->ip) {
         if (ip_packet->ip_p == ip_protocol_icmp) {
@@ -727,76 +582,18 @@ void nat_handle_ip(struct sr_instance* sr,
               }
             }
         }else if (ip_packet->ip_p == ip_protocol_tcp) {
-          printf("Handling external to internals TCP\n");
-          printf("after if  printing eth %s\n", sr_get_interface(sr,ETH2)->name);
-          fflush(stdout);
           sr_tcp_hdr_t* tcp_packet = (sr_tcp_hdr_t*) (packet + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
-          struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat,
-                                                                tcp_packet->dst_port,
-                                                                nat_mapping_tcp);
-          if ((ntohs(tcp_packet->flags) & 0x2) >> 1) {
-            if (lookup_ext) {
-              pthread_mutex_lock(&((sr->nat)->lock));
-              struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
-                                                                    tcp_packet->dst_port,
-                                                                    nat_mapping_tcp);
-              struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(ext_mapping,
-                                                                    ip_packet->ip_src,
-                                                                    tcp_packet->src_port);
-
-              if (!lookup_conns) {
-                sr_nat_insert_connection(ext_mapping, ip_packet->ip_src, tcp_packet->src_port);
-                lookup_conns = sr_nat_lookup_connection(lookup_ext, ip_packet->ip_src,
-                                                                      tcp_packet->src_port);
-                /* if (tcp_packet->dst_port != 22) {
-                  lookup_conns->syn_received = malloc(len - sizeof(sr_ethernet_hdr_t));
-                  memcpy(lookup_conns->syn_received, ip_packet, len - sizeof(sr_ethernet_hdr_t));
-                  lookup_conns->tcp_state = SYN_RECEIVED;
-                }*/
-                return;
-              } else if (lookup_conns->tcp_state == SYN_SENT) {
-                lookup_conns->tcp_state = ESTABLISHED;
-              }
-              pthread_mutex_unlock(&((sr->nat)->lock));
-              tcp_packet->dst_port = lookup_ext->aux_int;
-              ip_packet->ip_dst = lookup_ext->ip_int;
-              /*tcp_checksum(packet, len, sr);*/
-              tcp_packet->checksum = 0;
-              sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t));
-
-
-              tcp_pseudo_hdr->src_ip = ip_packet->ip_src;
-              tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
-              tcp_pseudo_hdr->reserved = 0;
-              tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-              tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
-
-              uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-              memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
-              memcpy(ptr+sizeof(sr_tcp_pseudo_hdr_t), tcp_packet, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
-              tcp_packet->checksum = cksum(ptr, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-
-              free(tcp_pseudo_hdr);
-              /*free(ptr);*/
-              /*tcp_packet->checksum = cksum(tcp_packet, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);*/
-              ip_packet->ip_sum = 0;
-              ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
+          tcp_packet->checksum = 0;
+          struct sr_nat_mapping* lookup_ext = sr_nat_lookup_external(sr->nat, 
+                                                              tcp_packet->dst_port, 
+                                                              nat_mapping_tcp);
+          if(iface){
+            if (!lookup_ext) {
+              /* handle imcp or tcp targeted to one of the interfaces from server1 or server2*/
+              printf("No mappping found\n");
               sr_handle_ip(sr, packet, len, ETH2);
-              free(lookup_ext);                                                 
-            }
-          } else if ((ntohs(tcp_packet->flags) & 0x10) >> 4){
-            if (lookup_ext) {
-              pthread_mutex_lock(&((sr->nat)->lock));
-              struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
-                                                                    tcp_packet->dst_port,
-                                                                    nat_mapping_tcp);
-              struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(ext_mapping,
-                                                                    ip_packet->ip_src,
-                                                                    tcp_packet->src_port);
-              if (lookup_conns && lookup_conns->tcp_state == SYN_SENT) {
-                lookup_conns->tcp_state = ESTABLISHED;
-              }
-              pthread_mutex_unlock(&((sr->nat)->lock));
+            }else{
+              /* handle tcp ack from server*/
               tcp_packet->dst_port = lookup_ext->aux_int;
               ip_packet->ip_dst = lookup_ext->ip_int;
 
@@ -816,63 +613,24 @@ void nat_handle_ip(struct sr_instance* sr,
               tcp_packet->checksum = cksum(ptr, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
 
               free(tcp_pseudo_hdr);
-              /*free(ptr);*/
+              /*free(ptr);*/          
               ip_packet->ip_sum = 0;
               ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
-              print_hdr_ip(ip_packet);
-              printf("TTTTTTTTTTRing to sent the packet for incoming tcp packet !!!\n");
               sr_handle_ip(sr, packet, len, ETH2);
-              free(lookup_ext);             
+              free(lookup_ext);
             }
-          } else if (!lookup_ext) {
-            return;
-          } else if (ntohs(tcp_packet->flags) & 0x1) {
-            pthread_mutex_lock(&((sr->nat)->lock));
-            struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
-                                                                    tcp_packet->dst_port,
-                                                                    nat_mapping_tcp);
-            struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(ext_mapping,
-                                                                  ip_packet->ip_src,
-                                                                  tcp_packet->src_port);
-            if (lookup_conns) {
-              lookup_conns->tcp_state = CLOSE_WAIT;
+          }else{
+            struct sr_rt* next_hop = get_next_hop(sr,ip_packet->ip_dst);
+            printf("find the next hop");
+            if(sr_get_interface(sr, next_hop->interface)->ip == sr_get_interface(sr, ETH1)->ip){
+               printf("dropping direct external -> internal packet\n");
+            }else{
+              /* imcp, tcp, or other packets sent to somewhere else*/
+              sr_handle_ip(sr, packet, len, ETH2);
             }
-            pthread_mutex_unlock(&((sr->nat)->lock));
-            tcp_packet->dst_port = lookup_ext->aux_int;
-            ip_packet->ip_dst = lookup_ext->ip_int;
-            /*tcp_checksum(packet, len, sr);*/
-            tcp_packet->checksum = 0;
-            sr_tcp_pseudo_hdr_t* tcp_pseudo_hdr = malloc(sizeof(sr_tcp_pseudo_hdr_t));
-
-
-            tcp_pseudo_hdr->src_ip = ip_packet->ip_src;
-            tcp_pseudo_hdr->dst_ip = ip_packet->ip_dst;
-            tcp_pseudo_hdr->reserved = 0;
-            tcp_pseudo_hdr->protocol = ip_protocol_tcp;
-            tcp_pseudo_hdr->length = htons(ntohs(ip_packet->ip_len) -ip_packet->ip_hl*4);
-
-            uint8_t* ptr = malloc(len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-            memcpy(ptr, tcp_pseudo_hdr, sizeof(sr_tcp_pseudo_hdr_t));
-            memcpy(ptr+sizeof(sr_tcp_pseudo_hdr_t), tcp_packet, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t));
-            tcp_packet->checksum = cksum(ptr, len-sizeof(sr_ethernet_hdr_t)-sizeof(sr_ip_hdr_t)+sizeof(sr_tcp_pseudo_hdr_t));
-
-            free(tcp_pseudo_hdr);
-            /*free(ptr);*/
-            /*tcp_packet->checksum = cksum(tcp_packet, htons(ip_packet->ip_len)-ip_packet->ip_hl*4);*/
-            ip_packet->ip_sum = 0;
-            ip_packet->ip_sum = cksum(ip_packet, ip_packet->ip_hl*4);
-            sr_handle_ip(sr, packet, len, ETH2);
-            free(lookup_ext);                    
-          } else {
-            pthread_mutex_lock(&((sr->nat)->lock));
-            struct sr_nat_mapping *ext_mapping = sr_nat_external_mapping(sr->nat,
-                                                                    tcp_packet->dst_port,
-                                                                    nat_mapping_tcp);
-            struct sr_nat_connection *lookup_conns = sr_nat_lookup_connection(ext_mapping,
-                                                                  ip_packet->ip_src,
-                                                                  tcp_packet->src_port);
-            pthread_mutex_unlock(&((sr->nat)->lock));
-            free(lookup_ext);
+            if (lookup_ext) {
+              free(lookup_ext);
+            }
           }
         }
       }
