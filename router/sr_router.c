@@ -216,8 +216,24 @@ void sr_handle_ip(struct sr_instance* sr,
       } else {
         /* it contains protocals other than icmp and has type3 or type11 */
         struct sr_rt* next_hop = get_next_hop(sr, ip_packet->ip_src);
+        struct sr_if* new_iface;
+        if(!sr->nat){
+          new_iface = sr_get_interface(sr, next_hop->interface);
+        }else{
+          if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH1)->ip){
+
+            new_iface = sr_get_interface(sr,ETH2);
+            
+          }else if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH2)->ip){
+  
+            new_iface = sr_get_interface(sr,ETH1);
+          }else{
+            new_iface = sr_get_interface(sr, next_hop->interface);
+          }
+        }
+        
         printf("I was here\n");
-        icmp_type3_type11(sr, ip_packet, 3, 3, next_hop->interface);
+        icmp_type3_type11(sr, ip_packet, 3, 3, new_iface->name);
       }
     } else {
       /* Try to find the outgoing interface at the router for that specific
@@ -244,19 +260,13 @@ void sr_handle_ip(struct sr_instance* sr,
             new_iface = sr_get_interface(sr, next_hop->interface);
           }else{
             if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH1)->ip){
-              printf("From ETH1!\n");
-              fflush(stdout);
+
               new_iface = sr_get_interface(sr,ETH2);
-              printf("ip of new iface %d\n",new_iface->ip);
-              fflush(stdout);
-              printf("Eth setted\n");
-              fflush(stdout);
+              
             }else if(sr_get_interface(sr, interface)->ip == sr_get_interface(sr, ETH2)->ip){
-              printf("From ETH2!\n");
-              fflush(stdout);
+    
               new_iface = sr_get_interface(sr,ETH1);
             }else{
-              printf("Get echo reply from strange interface\n");
               new_iface = sr_get_interface(sr, next_hop->interface);
             }
           }
@@ -468,7 +478,6 @@ void nat_handle_ip(struct sr_instance* sr,
         icmp_type3_type11(sr, ip_packet, 3, 3, ETH1);
         /* Validdate the tcp packet with pseudo header*/
         if (valid_tcp_packet(ip_packet, len)) {
-          
           
           /*sr_handle_ip(sr, packet, len, ETH1);*/
         }
